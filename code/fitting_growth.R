@@ -2,7 +2,7 @@ library(ggplot2)
 library(minpack.lm)
 
 raw = read.csv('../data/Bacteria_growth.csv', header = F)
-W02 = data.frame(Time = as.numeric(raw[2,2:9]), S1 = as.numeric(raw[3,2:9]), S2 = as.numeric(raw[4, 2:9]), S3 = as.numeric(raw[5,2:9]))
+W02 = data.frame(Time = as.numeric(raw[2,2:9]), S1 = as.numeric(raw[3,2:9])*50, S2 = as.numeric(raw[4, 2:9])*50, S3 = as.numeric(raw[5,2:9])*50)
 Mean = rowMeans(W02[,2:4],na.rm = T)
 #W02 = cbind(W02, Mean)
 #plot(W02$Time, W02$Mean)
