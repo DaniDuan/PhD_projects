@@ -1,7 +1,16 @@
 library(ggplot2)
+library(reshape2)
 library(minpack.lm)
 
+growth = function(t, r_max, K, N_0){
+  return(N_0 * K * exp(r_max * t)/(K + N_0 * (exp(r_max * t) - 1)))
+}
+
+t = seq(0,60,1)
+
 raw = read.csv('../data/Bacteria_growth.csv', header = F)
+
+###################### W02 ##########################
 W02 = data.frame(Time = as.numeric(raw[2,2:9]), S1 = as.numeric(raw[3,2:9])*50, S2 = as.numeric(raw[4, 2:9])*50, S3 = as.numeric(raw[5,2:9])*50)
 Mean = rowMeans(W02[,2:4],na.rm = T)
 #W02 = cbind(W02, Mean)
@@ -10,12 +19,6 @@ Mean = rowMeans(W02[,2:4],na.rm = T)
 w02_M = melt(W02, id.vars = "Time")
 colnames(w02_M) = c("Time", "Strain", "Cell_Count")
 #ggplot(w02_M, aes(Time,Cell_Count,color = Strain))+ geom_point()
-
-growth = function(t, r_max, K, N_0){
-  return(N_0 * K * exp(r_max * t)/(K + N_0 * (exp(r_max * t) - 1)))
-}
-
-t = seq(0,60,1)
 
 pdf(file = "../results/W02_growth.pdf") 
 
@@ -44,4 +47,18 @@ for(i in unique(w02_M$Strain)){
 }  
 p
 
+dev.off()
+
+################## S18 ##############################
+
+S18 = data.frame(Time = as.numeric(raw[9,2:6]), S1 = as.numeric(raw[10,2:6])*50, S2 = as.numeric(raw[11, 2:6])*50, S3 = as.numeric(raw[12,2:6])*50)
+Mean = rowMeans(S18[,2:4],na.rm = T)
+#S18 = cbind(S18, Mean)
+#plot(S18$Time, S18$Mean)
+
+s18_M = melt(S18, id.vars = "Time")
+colnames(s18_M) = c("Time", "Strain", "Cell_Count")
+
+pdf(file = "../results/S18_growth.pdf") 
+ggplot(s18_M, aes(Time,Cell_Count,color = Strain))+scale_color_brewer(palette = "Dark2") + geom_point()
 dev.off()
