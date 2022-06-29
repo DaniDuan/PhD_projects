@@ -11,10 +11,10 @@ import model_func as mod
 ######## Set up parameters ###########
 
 N = 2 # Number of consumers
-M = 1 # Number of resources
+M = 2 # Number of resources
 
 # Temperature params
-T = 273.15 + 20 # Temperature
+T = 273.15 + 0 # Temperature
 Tref = 273.15 + 0 # Reference temperature Kelvin
 Ma = 1 # Mass
 Ea_D = 3.5 # Deactivation energy - only used if use Sharpe-Schoolfield temp-dependance
@@ -34,7 +34,6 @@ def ass_temp_run(N, M, T, Tref, Ma, Ea_D, lf, p_value, typ, K):
     '''
     Main function for the simulation of resource uptake and growth of microbial communities.
     '''
-
     # Setted Parameters
     k = 0.0000862 # Boltzman constant
     a = 15 # The alpha value for beta distribution in Ea
@@ -81,16 +80,22 @@ def ass_temp_run(N, M, T, Tref, Ma, Ea_D, lf, p_value, typ, K):
 
     # for one resource
     S_e = pops.y[t_fin-1,N:N+M]
-    alpha_0 = -((1-l_sum)**2*S_e**2)*B_U[0]*B_U[1]/p
+    C_e = pops.y[t_fin-1,0:N]
+    # alpha_0 = -((1-l_sum)**2*S_e**2)*B_U[0]*B_U[1]/p # when only one resource
+    p_i = U[0,0]/np.sum(U, axis = 1)[0]
+    p_j = U[1,0]/np.sum(U, axis = 1)[1]
+    alpha_0 = -(p_i*p_j*(S_e[0]**2)*(1-lf)*(1-l[0,0])/(1+l[1,0]/(1-l[1,1]))+(1-p_i)*(1-p_j)*(S_e[1]**2)*(1-lf)*(1-l[1,1])/(1+l[0,1]/(1-l[0,0])))*B_U[0]*B_U[1]  # when 2 species and tw oresources
     alpha_E = np.sum(Ea_U)
-    alpha = -(U[0]*U[1]*(1-l_sum)**2*S_e**2)/p
+
+
+    alpha = -(U[0,0]*U[1,0]*(1-lf)*S_e[0]/(C_e[0]*U[0,0]+C_e[1]*U[1,0])+U[0,1]*U[1,1]*(1-lf)*S_e[1]/(C_e[0]*U[0,1]+C_e[1]*U[1,1]))
     ### Storing simulation results ###
     result_array = np.append(result_array, pops.y, axis=0)
 
     return result_array, alpha_0, alpha_E, alpha
 
 
-C_1 = pops.y[t_fin-1,0]
-C_2 = pops.y[t_fin-1,1]
-p - (C_1*U[0]+C_2*U[1])*S_e*(1-l_sum)
-C_1 * (U[0]*S_e*(1-l_sum)-R[0])
+# result_array, alpha_0, alpha_E, alpha = ass_temp_run(N, M, T, Tref, Ma, Ea_D, lf, p_value, typ, K)
+
+# print(alpha)
+# print(alpha_0)
