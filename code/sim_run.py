@@ -22,7 +22,7 @@ for rs in range(3):
 
     alpha_all = np.empty((0))
     alpha_all_0 = np.empty((0))
-    results_all = np.empty((0,2))
+    results_all = np.empty((0,4))
     ##### Intergrate system forward #####
 
     for i in range(5):
@@ -31,15 +31,16 @@ for rs in range(3):
         result_array, alpha_0, alpha_E, alpha = ass_temp_run(N, M, T, Tref, Ma, Ea_D, lf, p_value, typ, K)
         alpha_all_0 = np.append(alpha_all_0, alpha_0)
         alpha_all = np.append(alpha_all, alpha)
-        results_all = np.append(results_all, [result_array[len(result_array)-1,0:N]], axis = 0)
+        results_all = np.append(results_all, [result_array[len(result_array)-1,:]], axis = 0)
 
     T_plot = np.array(range(0, 25, 5))+273.15
     y = np.mean(alpha_all_0) * np.exp((-alpha_E/k) * ((1/T_plot)-(1/Tref)))
     
-    print("Equilibrium biomass at all temps:\n", results_all)
-    print("α0 at all temps:" , alpha_all_0, "; mean:", np.mean(alpha_all_0))
-    print("α at all temps:" , alpha_all)
-    print("Estimation by Arrhenius:", y)
+    print("Equilibrium biomass and resources concentrations:\n", np.round(results_all,4))
+    print("Variation in equiblibrium resources", np.round(np.var(results_all[:,N:N+M]),4))
+    print("α0 at all temps:" , np.round(alpha_all_0,4), "; mean:", np.round(np.mean(alpha_all_0), 4), "; std:", np.round(np.std(alpha_all_0),4))
+    print("α at all temps:" , np.round(alpha_all,4))
+    print("Estimation by Arrhenius:", np.round(y,4))
 
     plt.plot(T_plot - 273.15, alpha_all, label = "alpha")
     plt.plot(T_plot - 273.15, y, label = "estimation")

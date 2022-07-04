@@ -86,8 +86,6 @@ def ass_temp_run(N, M, T, Tref, Ma, Ea_D, lf, p_value, typ, K):
     p_j = U[1,0]/np.sum(U, axis = 1)[1]
     alpha_0 = -(p_i*p_j*(S_e[0]**2)*(1-lf)*(1-l[0,0])/(1+l[1,0]/(1-l[1,1]))+(1-p_i)*(1-p_j)*(S_e[1]**2)*(1-lf)*(1-l[1,1])/(1+l[0,1]/(1-l[0,0])))*B_U[0]*B_U[1]  # when 2 species and tw oresources
     alpha_E = np.sum(Ea_U)
-
-
     alpha = -(U[0,0]*U[1,0]*(1-lf)*S_e[0]/(C_e[0]*U[0,0]+C_e[1]*U[1,0])+U[0,1]*U[1,1]*(1-lf)*S_e[1]/(C_e[0]*U[0,1]+C_e[1]*U[1,1]))
     ### Storing simulation results ###
     result_array = np.append(result_array, pops.y, axis=0)
