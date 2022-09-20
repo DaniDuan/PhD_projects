@@ -41,26 +41,28 @@ color = c("blue","yellow", "darkorange", "brown", "black")
 # pdf("../results/Ramping_OD.pdf")
 # for(i in 1:7){
 #   for(j in 1:5){
-#     plot(time, data[seq(j,(174+j),5),(8-i)], main = paste(sp[i],"_",temp[j]), xlab = "Day", ylab = "OD", ylim =c(min(data[seq(j,(174+j),5),(8-i)]-sd[seq(j,(174+j),5),(8-i)]),max(data[seq(j,(174+j),5),(8-i)]+sd[seq(j,(174+j),5),(8-i)])))
-#     arrows(x0=time, y0=data[seq(j,(174+j),5),(8-i)]-sd[seq(j,(174+j),5),(8-i)], x1=time, y1=data[seq(j,(174+j),5),(8-i)]+sd[seq(j,(174+j),5),(8-i)], code=3, angle=90, lwd=0.6, length = 0.05)
+#     plot(time, data[seq(j,175,5),(8-i)], main = paste(sp[i],"_",temp[j]), xlab = "Day", ylab = "OD", ylim =c(min(data[seq(j,175,5),(8-i)]-sd[seq(j,175,5),(8-i)]),max(data[seq(j,175,5),(8-i)]+sd[seq(j,175,5),(8-i)])))
+#     arrows(x0=time, y0=data[seq(j,175,5),(8-i)]-sd[seq(j,175,5),(8-i)], x1=time, y1=data[seq(j,175,5),(8-i)]+sd[seq(j,175,5),(8-i)], code=3, angle=90, lwd=0.6, length = 0.05)
 #   }
 # }
 # graphics.off()
 
 pdf("../results/Ramping_OD_bytemp.pdf")
 for(i in 1:7){
+  # png(filename = paste(("../results/Ramping_OD_bytemp/OD_temp_"),sp[i],".png", sep=""), width = 480, height = 480)
   plot(1, type="n", xlab="Day", ylab = "OD",
        main = sp[i], xlim = c(time[1],time[length(time)]),
        ylim =c(min(data[1:175,(8-i)]-sd[1:175,(8-i)]),max(data[1:175,(8-i)]+sd[1:175,(8-i)])))
   for(j in 1:5){
-  points(time, data[seq(j,(174+j),5),(8-i)], col = color[j])
-  arrows(x0=time, y0=data[seq(j,(174+j),5),(8-i)]-sd[seq(j,(174+j),5),(8-i)],
-           x1=time, y1=data[seq(j,(174+j),5),(8-i)]+sd[seq(j,(174+j),5),(8-i)],
+  points(time, data[seq(j,175,5),(8-i)], col = color[j])
+  arrows(x0=time, y0=data[seq(j,175,5),(8-i)]-sd[seq(j,175,5),(8-i)],
+           x1=time, y1=data[seq(j,175,5),(8-i)]+sd[seq(j,175,5),(8-i)],
            code=3, angle=90, lwd=1, length = 0.05, col = color[j])
   }
   abline(v = 13, lty = 3)
   legend("topleft", c("10C","10_30C", "20C", "30C", "Ramping"), cex = 1, col = color, pch = 1)
-}
+  # graphics.off()
+  }
 graphics.off()
 
 ######################### Initial growth ############################
@@ -68,8 +70,8 @@ graphics.off()
 # for(i in 1:7){
 #   for(j in 1:5){
 #     if(j == 1|j == 3| j == 4){
-#       plot(time[1:5], data[seq(j,(24+j),5),(8-i)], main = paste(sp[i],"_",temp[j]), xlab = "Day", ylab = "OD", ylim =c(min(data[seq(j,(24+j),5),(8-i)]-sd[seq(j,(24+j),5),(8-i)]),max(data[seq(j,(24+j),5),(8-i)]+sd[seq(j,(24+j),5),(8-i)])))
-#       arrows(x0=time[1:5], y0=data[seq(j,(24+j),5),(8-i)]-sd[seq(j,(24+j),5),(8-i)], x1=time[1:5], y1=data[seq(j,(24+j),5),(8-i)]+sd[seq(j,(24+j),5),(8-i)], code=3, angle=90, lwd=0.6, length = 0.05)
+#       plot(time[1:5], data[seq(j,25,5),(8-i)], main = paste(sp[i],"_",temp[j]), xlab = "Day", ylab = "OD", ylim =c(min(data[seq(j,25,5),(8-i)]-sd[seq(j,25,5),(8-i)]),max(data[seq(j,25,5),(8-i)]+sd[seq(j,25,5),(8-i)])))
+#       arrows(x0=time[1:5], y0=data[seq(j,25,5),(8-i)]-sd[seq(j,25,5),(8-i)], x1=time[1:5], y1=data[seq(j,25,5),(8-i)]+sd[seq(j,25,5),(8-i)], code=3, angle=90, lwd=0.6, length = 0.05)
 #     }
 #   }
 # }
@@ -77,19 +79,102 @@ graphics.off()
 
 pdf("../results/Ramping_initial_bytemp.pdf")
 for(i in 1:7){
+  # png(filename = paste(("../results/Ramping_initial_bytemp/initial_temp_"),sp[i],".png", sep=""), width = 480, height = 480)
   plot(1, type="n", xlab="Day", ylab = "OD",
        main = sp[i], xlim = c(time[1],time[5]),
        ylim =c(min(data[1:30,(8-i)]-sd[1:30,(8-i)]),max(data[1:30,(8-i)]+sd[1:30,(8-i)])))
   for(j in 1:5){
     if(j == 1|j == 3| j == 4){
-      points(time[1:5], data[seq(j,(24+j),5),(8-i)], col = color[j])
-      arrows(x0=time[1:5], y0=data[seq(j,(24+j),5),(8-i)]-sd[seq(j,(24+j),5),(8-i)],
-             x1=time[1:5], y1=data[seq(j,(24+j),5),(8-i)]+sd[seq(j,(24+j),5),(8-i)],
+      points(time[1:5], data[seq(j,25,5),(8-i)], col = color[j])
+      arrows(x0=time[1:5], y0=data[seq(j,25,5),(8-i)]-sd[seq(j,25,5),(8-i)],
+             x1=time[1:5], y1=data[seq(j,25,5),(8-i)]+sd[seq(j,25,5),(8-i)],
              code=3, angle=90, lwd=1, length = 0.05, col = color[j])
     }
     legend("topleft", c("10C", "20C", "30C"), cex = 1, col = color, pch = 1)
   }
+  # graphics.off()
+  }
+graphics.off()
+
+####################### Initial growth rate ###########################
+log_od = data.frame()
+
+for(i in 1:25){
+  log_od= rbind(log_od, log(Ramping[seq((i-1)*8+2, i*8-1), 4:11] - mean(Ramping[seq((i-1)*8+2, i*8-1), 5], na.rm = T)))
 }
+# log_od[is.na(log_od)] = 0
+# log_od[log_od == -Inf] = 0
+log_od = log_od[-2]
+
+# for(s in 1:7){
+#   for (reps in 1:30) { # 6 reps * 5 treatments
+#       plot(1, type="n", xlab="Day", ylab = "log(OD)",
+#            main = paste(sp[s], "_", reps, sep = ""), xlim = c(time[1],time[5]),
+#            ylim =c(-9, 0))
+#       for(t in 1:5){
+#         points(time[t], log_od[(30*(t - 1)+reps), s])
+#     }
+#   }
+# }
+
+r_data = data.frame()
+for(s in 1:7){
+  for (reps in 1:30) { # 6 reps * 5 treatments
+    dp = c()
+    for(t in 1:5){
+      dp = c(dp, log_od[(30*(t - 1)+reps), s])
+    }
+    r_data = rbind(r_data, dp)
+  }
+}
+names(r_data) = time[1:5]
+
+pdf("../results/ramping_initial_all_reps.pdf")
+data_123 = data.frame()
+for(s in 1:7){
+  for(i in 1:5){
+    if(i == 1 || i == 3|| i == 4){
+      r_123 = r_data[((s-1)*30+(i-1)*6+1) :((s-1)*30+6*i),]
+      data_123 = rbind(data_123, r_123) # 6 replicates in 3 temperatures in 7 species groups
+    for(reps in 1:6){
+      plot(time[1:5], r_123[reps,], xlab = "Day", ylab = "log(OD)",
+           main = paste(sp[s], "_", temp[i],"_",reps, sep = ""))
+      }
+    }
+  }
+}
+graphics.off()
+
+# getting the highest slope as growth rate
+slopes = data.frame(matrix(NA, nrow = nrow(data_123), ncol = 0))
+for(i in 1:4){
+  slopes = cbind(slopes, data_123[,i+1] - data_123[,i])
+}
+r = apply(slopes, 1, max, na.rm =F)
+
+all_means = c()
+all_sd = c()
+for(i in 1:21){
+  all_means = c(all_means, mean(r[(6*(i-1)+1):(6*i)], na.rm = T))
+  all_sd = c(all_sd, sd(r[(6*(i-1)+1):(6*i)], na.rm = T))
+}
+all_sd[is.na(all_sd)] = 0
+
+pdf("../results/Ramping_initial_gr_bytemp.pdf")
+color_by_sp = c("darkgreen", "blue", "chocolate2", "darkblue", "burlywood4", "blueviolet", "black")
+pch_by_sp = c(1,1,1,2,4,5,3)
+plot(1, type="n", xlab="Temps", ylab = "Growth Rate (Day)",
+     main = "Initial Growth Rates", xlim = c(10,30),
+     ylim =c(min(all_means),max(all_means)))
+for(s in 1:7){
+  points(c(10,20,30),all_means[(3*(s-1)+1) : (3*(s-1)+3)], col = color_by_sp[s], pch = pch_by_sp[s] ,lwd = 2)
+  # arrows(x0=c(10,20,30), 
+  #        y0=all_means[(3*(s-1)+1) : (3*(s-1)+3)] - all_sd[(3*(s-1)+1) : (3*(s-1)+3)],
+  #        x1=c(10,20,30), 
+  #        y1=all_means[(3*(s-1)+1) : (3*(s-1)+3)] + all_sd[(3*(s-1)+1) : (3*(s-1)+3)],
+  #        code=3, angle=90, lwd=1, length = 0.05, col = color_by_sp[s])
+}
+legend("topleft", sp, cex = 1, col = color_by_sp, pch = pch_by_sp, ncol = 2)
 graphics.off()
 
 ####################### Relative abundance ###########################
@@ -121,41 +206,41 @@ for(i in 1:5){
   # S18+W02
   plot(1, type="n", xlab="Day", ylab = "OD",
        main = paste("S18+W02_", temp[i]), xlim = c(ra_time[1],ra_time[11]),
-       ylim =c(min(col_mean[(11*(i-1)+1):(11*i),1],col_mean[(11*(i-1)+1):(11*i),2], na.rm = T),
-               max(col_mean[(11*(i-1)+1):(11*i),1],col_mean[(11*(i-1)+1):(11*i),2], na.rm = T)))
-  points(ra_time,col_mean[(11*(i-1)+1):(11*i),1], col = "darkgreen")
-  points(ra_time,col_mean[(11*(i-1)+1):(11*i),2], col = "blue")
+       ylim =c(min(ra_mean[(11*(i-1)+1):(11*i),1],ra_mean[(11*(i-1)+1):(11*i),2], na.rm = T),
+               max(ra_mean[(11*(i-1)+1):(11*i),1],ra_mean[(11*(i-1)+1):(11*i),2], na.rm = T)))
+  points(ra_time,ra_mean[(11*(i-1)+1):(11*i),1], col = "darkgreen")
+  points(ra_time,ra_mean[(11*(i-1)+1):(11*i),2], col = "blue")
   legend("right", c("S18", "W02"), cex = 1, col = c("darkgreen", "blue"), pch = 1, 
          box.lty = 3)
   
   # S18+W03
   plot(1, type="n", xlab="Day", ylab = "OD",
        main = paste("S18+W03_", temp[i]), xlim = c(ra_time[1],ra_time[11]),
-       ylim =c(min(col_mean[(11*(i-1)+1):(11*i),3],col_mean[(11*(i-1)+1):(11*i),4], na.rm = T),
-               max(col_mean[(11*(i-1)+1):(11*i),3],col_mean[(11*(i-1)+1):(11*i),4], na.rm = T)))
-  points(ra_time,col_mean[(11*(i-1)+1):(11*i),3], col = "darkgreen")
-  points(ra_time,col_mean[(11*(i-1)+1):(11*i),4], col = "chocolate2")
+       ylim =c(min(ra_mean[(11*(i-1)+1):(11*i),3],ra_mean[(11*(i-1)+1):(11*i),4], na.rm = T),
+               max(ra_mean[(11*(i-1)+1):(11*i),3],ra_mean[(11*(i-1)+1):(11*i),4], na.rm = T)))
+  points(ra_time,ra_mean[(11*(i-1)+1):(11*i),3], col = "darkgreen")
+  points(ra_time,ra_mean[(11*(i-1)+1):(11*i),4], col = "chocolate2")
   legend("right", c("S18", "W03"), cex = 1, col = c("darkgreen", "chocolate2"), pch = 1, box.lty = 3)
 
   # W02+W03
   plot(1, type="n", xlab="Day", ylab = "OD",
        main = paste("W02+W03_", temp[i]), xlim = c(ra_time[1],ra_time[11]),
-       ylim =c(min(col_mean[(11*(i-1)+1):(11*i),5],col_mean[(11*(i-1)+1):(11*i),6], na.rm = T),
-               max(col_mean[(11*(i-1)+1):(11*i),5],col_mean[(11*(i-1)+1):(11*i),6], na.rm = T)))
-  points(ra_time,col_mean[(11*(i-1)+1):(11*i),5], col = "blue")
-  points(ra_time,col_mean[(11*(i-1)+1):(11*i),6], col = "chocolate2")
+       ylim =c(min(ra_mean[(11*(i-1)+1):(11*i),5],ra_mean[(11*(i-1)+1):(11*i),6], na.rm = T),
+               max(ra_mean[(11*(i-1)+1):(11*i),5],ra_mean[(11*(i-1)+1):(11*i),6], na.rm = T)))
+  points(ra_time,ra_mean[(11*(i-1)+1):(11*i),5], col = "blue")
+  points(ra_time,ra_mean[(11*(i-1)+1):(11*i),6], col = "chocolate2")
   legend("right", c("W02", "W03"), cex = 1, col = c("blue", "chocolate2"), pch = 1, box.lty = 3)
 
   # S18+W02+W03
   plot(1, type="n", xlab="Day", ylab = "OD",
        main = paste("All_", temp[i]), xlim = c(ra_time[1],ra_time[11]),
-       ylim =c(min(col_mean[(11*(i-1)+1):(11*i),7],col_mean[(11*(i-1)+1):(11*i),8],
-                   col_mean[(11*(i-1)+1):(11*i),9], na.rm = T),
-               max(col_mean[(11*(i-1)+1):(11*i),7],col_mean[(11*(i-1)+1):(11*i),8],
-                   col_mean[(11*(i-1)+1):(11*i),9], na.rm = T)))
-  points(ra_time,col_mean[(11*(i-1)+1):(11*i),7], col = "darkgreen")
-  points(ra_time,col_mean[(11*(i-1)+1):(11*i),8], col = "blue")
-  points(ra_time,col_mean[(11*(i-1)+1):(11*i),9], col = "chocolate2")
+       ylim =c(min(ra_mean[(11*(i-1)+1):(11*i),7],ra_mean[(11*(i-1)+1):(11*i),8],
+                   ra_mean[(11*(i-1)+1):(11*i),9], na.rm = T),
+               max(ra_mean[(11*(i-1)+1):(11*i),7],ra_mean[(11*(i-1)+1):(11*i),8],
+                   ra_mean[(11*(i-1)+1):(11*i),9], na.rm = T)))
+  points(ra_time,ra_mean[(11*(i-1)+1):(11*i),7], col = "darkgreen")
+  points(ra_time,ra_mean[(11*(i-1)+1):(11*i),8], col = "blue")
+  points(ra_time,ra_mean[(11*(i-1)+1):(11*i),9], col = "chocolate2")
   legend("right", c("S18","W02", "W03"), cex = 1, 
          col = c("darkgreen","blue", "chocolate2"), pch = 1, box.lty = 3)
 }
