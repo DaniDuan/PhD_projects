@@ -150,11 +150,11 @@ slopes = data.frame(matrix(NA, nrow = nrow(data_123), ncol = 0))
 for(i in 1:4){
   slopes = cbind(slopes, data_123[,i+1] - data_123[,i])
 }
-r = apply(slopes, 1, max, na.rm =F)
+r = apply(slopes, 1, max, na.rm =T)
 
 all_means = c()
 all_sd = c()
-for(i in 1:21){
+for(i in 1:(3*7)){
   all_means = c(all_means, mean(r[(6*(i-1)+1):(6*i)], na.rm = T))
   all_sd = c(all_sd, sd(r[(6*(i-1)+1):(6*i)], na.rm = T))
 }
@@ -176,6 +176,100 @@ for(s in 1:7){
 }
 legend("topleft", sp, cex = 1, col = color_by_sp, pch = pch_by_sp, ncol = 2)
 graphics.off()
+
+######################### Plotting growth rate for all #######################
+### initial growth rate for all treatments
+data_in = data.frame()
+for(s in 1:7){
+  for(i in 1:5){
+    r_all = r_data[((s-1)*30+(i-1)*6+1) :((s-1)*30+6*i),]
+    data_in = rbind(data_in, r_all) # 6 replicates in 5 treatments in 7 species groups
+  }
+}
+
+# getting the highest slope as growth rate
+slopes_in = data.frame(matrix(NA, nrow = nrow(data_in), ncol = 0))
+for(i in 1:4){
+  slopes_in = cbind(slopes_in, data_in[,i+1] - data_in[,i])
+}
+r_in = apply(slopes_in, 1, max, na.rm =T)
+
+in_means = c()
+in_sd = c()
+for(i in 1:(5*7)){
+  in_means = c(in_means, mean(r_in[(6*(i-1)+1):(6*i)], na.rm = T))
+  in_sd = c(in_sd, sd(r_in[(6*(i-1)+1):(6*i)], na.rm = T))
+}
+in_sd[is.na(in_sd)] = 0
+
+in_gr = data.frame()
+for(s in 1:7){ # 5 treatments, 7 species groups
+  in_gr = rbind(in_gr,in_means[(5*(s-1)+1) : (5*(s-1)+5)])
+  }
+
+### all growth rate close to carrying capacity
+log_all = data.frame()
+for(i in 26:175){
+  log_all= rbind(log_all, log(Ramping[seq((i-1)*8+2, i*8-1), 4:11] - mean(Ramping[seq((i-1)*8+2, i*8-1), 5], na.rm = T)))
+}
+log_all = log_all[-2]
+
+rall_data = data.frame()
+for(s in 1:7){
+  for (reps in 1:30) { # 6 reps * 5 treatments
+    dp = c()
+    for(t in 1:30){ # 35 - 5 = 30
+      dp = c(dp, log_all[(30*(t - 1)+reps), s])
+    }
+    rall_data = rbind(rall_data, dp)
+  }
+}
+names(rall_data) = time[6:35]
+
+data_5 = data.frame()
+for(s in 1:7){
+  for(i in 1:5){
+    r_5 = rall_data[((s-1)*30+(i-1)*6+1) :((s-1)*30+6*i),]
+    data_5 = rbind(data_5, r_5) # 6 replicates in 5 treatments in 7 species groups
+    for(reps in 1:6){
+      plot(time[6:35], r_5[reps,], xlab = "Day", ylab = "log(OD)",
+           main = paste(sp[s], "_", temp[i],"_",reps, sep = ""))
+    }
+  }
+}
+
+# getting the highest slope as growth rate
+slopes_all = data.frame(matrix(NA, nrow = nrow(data_5), ncol = 0))
+for(i in 1:29){
+  slopes_all = cbind(slopes_all, data_5[,i+1] - data_5[,i])
+}
+slopes_all = slopes_all[,-seq(3,29,3)]
+
+all_mx_gr = data.frame(matrix(NA, nrow = nrow(slopes_all), ncol = 0))
+for(i in 1:10){ # 10 groups of growth rates, compare every pair for maximum
+  subset = cbind(slopes_all[2*(i-1)+1], slopes_all[2*i])
+  all_mx_gr = cbind(all_mx_gr, apply(subset, 1, max, na.rm =F))
+}
+
+pdf("../results/Ramping_gr_bytemp.pdf")
+all_gr_means = data.frame()
+n = 0
+for(i in 1:7){
+  plot(1, type="n", xlab = "Day", ylab = "Growth rate",
+       main = sp[i], xlim = c(4,24),
+       ylim =c(0,1))
+  for(j in 1:5){
+    n = 5*(i-1)+j
+    mean_gr = colMeans(all_mx_gr[(6*(n-1)+1):(6*n),], na.rm = T)
+    all_gr_means = rbind(all_gr_means, mean_gr)
+    mean_gr[mean_gr>1] = NaN
+    points(seq(5,23,2),mean_gr, col = color[j], lwd = 2)
+  }
+  legend("topright", temp, cex = 1, col = color, pch = 1, box.lty = 2, ncol = 3)
+  abline(v = 13, lty = 3)
+}
+graphics.off()
+
 
 ####################### Relative abundance ###########################
 ra = read.csv("../data/Ramping/Relative_abundance.csv")
