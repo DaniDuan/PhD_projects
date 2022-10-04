@@ -12,7 +12,7 @@ Ramping = Ramping[,-1] # removing numbering col
 Ramping = Ramping[,-ncol(Ramping)] # removing wavelength col
 names(Ramping) = seq(1,ncol(Ramping))
 
-############################## Mean and standard deviation ################
+######################## Mean and standard deviation ####################
 data = data.frame()
 sd = data.frame()
 for(j in 4:11){
@@ -25,10 +25,10 @@ for(j in 4:11){
   data = rbind(data,d)
   sd = rbind(sd, e)
 }
-data = t(data)
+data = as.data.frame(t(data))
 row.names(data) = seq(1,(35*5))
 data = data[,-2]
-sd = t(sd)
+sd = as.data.frame(t(sd))
 row.names(sd) = seq(1,(35*5))
 sd = sd[,-2]
 
@@ -38,6 +38,14 @@ sp = c("S18", "W02", "W03", "S18+W02", "S18+W03", "W02+W03", "All")
 temp = c("10C","10_30C","20C","30C","Ramping")
 color = c("blue","yellow", "darkorange", "brown", "black")
 
+names(data) = sp
+names(sd) = sp
+data$temp = rep(temp, 35)
+sd$temp = rep(temp,35)
+data$day = sort(rep(time, 5))
+sd$day = sort(rep(time,5))
+
+data$sp_group = sort(rep(1:35,5))
 # pdf("../results/Ramping_OD.pdf")
 # for(i in 1:7){
 #   for(j in 1:5){
@@ -48,12 +56,12 @@ color = c("blue","yellow", "darkorange", "brown", "black")
 # graphics.off()
 
 pdf("../results/Ramping_OD_bytemp.pdf")
-for(i in 1:7){
+for(i in 1:7){ # Species
   # png(filename = paste(("../results/Ramping_OD_bytemp/OD_temp_"),sp[i],".png", sep=""), width = 480, height = 480)
   plot(1, type="n", xlab="Day", ylab = "OD",
        main = sp[i], xlim = c(time[1],time[length(time)]),
        ylim =c(min(data[1:175,(8-i)]-sd[1:175,(8-i)]),max(data[1:175,(8-i)]+sd[1:175,(8-i)])))
-  for(j in 1:5){
+  for(j in 1:5){ # temperature treatment
   lines(time, data[seq(j,175,5),(8-i)], col = color[j], type="b", pch = 1)
   arrows(x0=time, y0=data[seq(j,175,5),(8-i)]-sd[seq(j,175,5),(8-i)],
            x1=time, y1=data[seq(j,175,5),(8-i)]+sd[seq(j,175,5),(8-i)],
@@ -63,7 +71,7 @@ for(i in 1:7){
   legend("topleft", c("10C","10_30C", "20C", "30C", "Ramping"), cex = 1,
          col = color, pch = 1, lwd = 1)
   # graphics.off()
-  }
+}
 graphics.off()
 
 ######################## Initial growth ############################
@@ -97,7 +105,7 @@ for(i in 1:7){
     legend("topleft", c("10C", "20C", "30C"), cex = 1, col = color, pch = 1, lwd = 1)
   }
   # graphics.off()
-  }
+}
 graphics.off()
 
 ####################### Initial growth rate ###########################
@@ -275,7 +283,9 @@ for(i in 1:7){
   abline(v = 13, lty = 3)
 }
 graphics.off()
-
+names(all_gr_means) = seq(5,23,2)
+all_gr_means$temp = rep(temp,7)
+all_gr_means$sp = sp[sort(rep(1:7, 5))]
 
 ####################### Relative abundance ###########################
 ra = read.csv("../data/Ramping/Relative_abundance.csv")
@@ -294,6 +304,7 @@ for(i in 1:(length(t)-1)){
   sub = rbind(ra_p[1:6,],subset(ra_p, temp == t[i+1]))
   for(j in 1:length(d)){
   mean = colMeans(sub[sub$Day==d[j],1:9], na.rm = T)
+  print(d[j])
   ra_mean = rbind(ra_mean, mean)
   }
 }
@@ -301,50 +312,83 @@ names(ra_mean) = colnames(ra_p)[1:9]
 # sd_int = c(apply(ra[1:3,1:6], 2,sd), apply(ra[1:3, 7:9],2,sd))
 ra_time = seq(0,24,2)[-12][-2]
 
+ra_mean$day = rep(ra_time, 5)
+ra_mean$temp = temp[sort(rep(1:5,11))]
+
+sp_ra = c(sp[sort(rep(4:7,2))],sp[7])
+spinside = c("S18", "W02", "S18", "W03", "W02", "W03", "S18", "W02", "W03")
+colors_ra = c("darkgreen", "blue", "darkgreen", "chocolate2", "blue", "chocolate2", "darkgreen", "blue", "chocolate2")
 pdf("../results/Ramping_relative_abundances.pdf")
-for(i in 1:5){
-  # S18+W02
-  plot(1, type="n", xlab="Day", ylab = "%",
-       main = paste("S18+W02_", temp[i]), xlim = c(ra_time[1],ra_time[11]),
-       ylim =c(min(ra_mean[(11*(i-1)+1):(11*i),1],ra_mean[(11*(i-1)+1):(11*i),2], na.rm = T),
-               max(ra_mean[(11*(i-1)+1):(11*i),1],ra_mean[(11*(i-1)+1):(11*i),2], na.rm = T)))
-  lines(ra_time,ra_mean[(11*(i-1)+1):(11*i),1], col = "darkgreen", type="b", pch = 1)
-  lines(ra_time,ra_mean[(11*(i-1)+1):(11*i),2], col = "blue", type="b", pch = 1)
-  legend("right", c("S18", "W02"), cex = 1, col = c("darkgreen", "blue"), pch = 1, 
-         box.lty = 3, lwd = 1)
-  
-  # S18+W03
-  plot(1, type="n", xlab="Day", ylab = "%",
-       main = paste("S18+W03_", temp[i]), xlim = c(ra_time[1],ra_time[11]),
-       ylim =c(min(ra_mean[(11*(i-1)+1):(11*i),3],ra_mean[(11*(i-1)+1):(11*i),4], na.rm = T),
-               max(ra_mean[(11*(i-1)+1):(11*i),3],ra_mean[(11*(i-1)+1):(11*i),4], na.rm = T)))
-  lines(ra_time,ra_mean[(11*(i-1)+1):(11*i),3], col = "darkgreen", type="b", pch = 1)
-  lines(ra_time,ra_mean[(11*(i-1)+1):(11*i),4], col = "chocolate2", type="b", pch = 1)
-  legend("right", c("S18", "W03"), cex = 1, col = c("darkgreen", "chocolate2"),
-         pch = 1, box.lty = 3, lwd = 1)
-
-  # W02+W03
-  plot(1, type="n", xlab="Day", ylab = "%",
-       main = paste("W02+W03_", temp[i]), xlim = c(ra_time[1],ra_time[11]),
-       ylim =c(min(ra_mean[(11*(i-1)+1):(11*i),5],ra_mean[(11*(i-1)+1):(11*i),6], na.rm = T),
-               max(ra_mean[(11*(i-1)+1):(11*i),5],ra_mean[(11*(i-1)+1):(11*i),6], na.rm = T)))
-  lines(ra_time,ra_mean[(11*(i-1)+1):(11*i),5], col = "blue", type="b", pch = 1)
-  lines(ra_time,ra_mean[(11*(i-1)+1):(11*i),6], col = "chocolate2", type="b", pch = 1)
-  legend("right", c("W02", "W03"), cex = 1, col = c("blue", "chocolate2"), pch = 1, box.lty = 3)
-
-  # S18+W02+W03
-  plot(1, type="n", xlab="Day", ylab = "%",
-       main = paste("All_", temp[i]), xlim = c(ra_time[1],ra_time[11]),
-       ylim =c(min(ra_mean[(11*(i-1)+1):(11*i),7],ra_mean[(11*(i-1)+1):(11*i),8],
-                   ra_mean[(11*(i-1)+1):(11*i),9], na.rm = T),
-               max(ra_mean[(11*(i-1)+1):(11*i),7],ra_mean[(11*(i-1)+1):(11*i),8],
-                   ra_mean[(11*(i-1)+1):(11*i),9], na.rm = T)))
-  lines(ra_time,ra_mean[(11*(i-1)+1):(11*i),7], col = "darkgreen", type="b", pch = 1)
-  lines(ra_time,ra_mean[(11*(i-1)+1):(11*i),8], col = "blue", type="b", pch = 1)
-  lines(ra_time,ra_mean[(11*(i-1)+1):(11*i),9], col = "chocolate2", type="b", pch = 1)
-  legend("right", c("S18","W02", "W03"), cex = 1, 
-         col = c("darkgreen","blue", "chocolate2"), pch = 1,
-         lwd = 1, box.lty = 3)
+for(i in 1:length(temp)){
+  for(j in 1:length(unique(sp_ra))){
+    sp_ra_v = which(sp_ra == unique(sp_ra)[j])
+    plot(1, type="n", xlab="Day", ylab = "%",
+       main = paste(unique(sp_ra)[j],"_", temp[i],sep=""), xlim = c(ra_time[1],ra_time[11]),
+       ylim =c(min(ra_mean[(11*(i-1)+1):(11*i),sp_ra_v], na.rm = T),
+               max(ra_mean[(11*(i-1)+1):(11*i),sp_ra_v], na.rm = T)))
+    lines(ra_time,ra_mean[(11*(i-1)+1):(11*i),sp_ra_v[1]], col = colors_ra[sp_ra_v][1], type="b", pch = 1)
+    lines(ra_time,ra_mean[(11*(i-1)+1):(11*i),sp_ra_v[2]], col = colors_ra[sp_ra_v][2], type="b", pch = 1)
+    if(length(sp_ra_v) == 3){
+      lines(ra_time,ra_mean[(11*(i-1)+1):(11*i),sp_ra_v[3]], col = colors_ra[sp_ra_v][3], type="b", pch = 1)
+    }
+    legend("right", spinside[sp_ra_v], cex = 1, col = colors_ra[sp_ra_v], pch = 1, 
+           box.lty = 3, lwd = 1)
+  }
 }
 graphics.off()
 
+
+##################### relative abundance with growth OD #################
+# Initial
+ra_data = data[,4:10]
+ra_data_sd = sd[,4:9]
+ra_data = data.frame(replicate(2, ra_data[,1],simplify = F), 
+                     replicate(2, ra_data[,2],simplify = F),
+                     replicate(2, ra_data[,3],simplify = F),
+                     replicate(3, ra_data[,4],simplify = F),data[,8:10])
+ra_data_sd = data.frame(replicate(2, ra_data_sd[,1],simplify = F), 
+                     replicate(2, ra_data_sd[,2],simplify = F),
+                     replicate(2, ra_data_sd[,3],simplify = F),
+                     replicate(3, ra_data_sd[,4],simplify = F),data[,8:10])
+
+ra_OD = data.frame()
+ra_OD_sd = data.frame()
+for(i in 1:length(unique(ra_mean$day))){
+  ra_sub = subset(ra_mean, ra_mean$day == unique(ra_mean$day)[i])
+  if(i<10){
+    sub = subset(ra_data, ra_data$sp_group == (3*(i -1)+1)|ra_data$sp_group == (3*i-1)|ra_data$sp_group == (3*i))
+    sub_sd = subset(ra_data_sd, ra_data_sd$sp_group == (3*(i -1)+1)|ra_data_sd$sp_group == (3*i-1)|ra_data_sd$sp_group == (3*i))
+    rep_sub = do.call("rbind",replicate(3, ra_sub,simplify = F))
+  }
+  else{
+    sub = subset(ra_data, ra_data$sp_group == (4*(i -3))|ra_data$sp_group == (4*(i -3)+1)|ra_data$sp_group == (4*(i -3)+2)|ra_data$sp_group == (4*(i -3)+3))
+    sub_sd = subset(ra_data_sd, ra_data_sd$sp_group ==  (4*(i -3))|ra_data_sd$sp_group == (4*(i -3)+1)|ra_data_sd$sp_group == (4*(i -3)+2)|ra_data_sd$sp_group == (4*(i -3)+3))
+    rep_sub = do.call("rbind",replicate(4, ra_sub,simplify = F))
+  }
+  ra_OD = rbind(ra_OD, sub[,1:9]*rep_sub[1:9])
+  ra_OD_sd = rbind(ra_OD_sd, sub_sd[,1:9]*rep_sub[1:9])
+}
+names(ra_OD) = names(ra_mean[,1:9])
+names(ra_OD_sd) = names(ra_mean[,1:9])
+ra_OD = cbind(ra_OD, data[,8:10])
+ra_OD_sd = cbind(ra_OD_sd, data[,8:10])
+
+pdf("../results/ra_OD.pdf")
+for(i in 1:length(temp)){
+  for(j in 1:length(unique(sp_ra))){
+    sp_ra_v = which(sp_ra == unique(sp_ra)[j])
+    sub = ra_OD[seq(i,175,5),sp_ra_v]
+    plot(1, type="n", xlab="Day", ylab = "OD",
+         main = paste(unique(sp_ra)[j],"_", temp[i],sep=""),
+         xlim = c(time[1],time[length(time)]),
+         ylim =c(min(sub, na.rm = T), max(sub, na.rm = T)))
+    lines(time,sub[,1], col = colors_ra[sp_ra_v][1], type="b", pch = 1)
+    lines(time,sub[,2], col = colors_ra[sp_ra_v][2], type="b", pch = 1)
+    if(length(sp_ra_v) == 3){
+      lines(time,sub[,3], col = colors_ra[sp_ra_v][3], type="b", pch = 1)
+    }
+    legend("topright", spinside[sp_ra_v], cex = 1, col = colors_ra[sp_ra_v], pch = 1, 
+           box.lty = 3, lwd = 1)
+  }
+}
+graphics.off()
