@@ -55,21 +55,22 @@ data$sp_group = sort(rep(1:35,5))
 # }
 # graphics.off()
 
-pdf("../results/Ramping_OD_bytemp.pdf")
+pdf("../results/Ramping_OD_bytemp_20J.pdf")
 for(i in 1:7){ # Species
   # png(filename = paste(("../results/Ramping_OD_bytemp/OD_temp_"),sp[i],".png", sep=""), width = 480, height = 480)
   plot(1, type="n", xlab="Day", ylab = "OD",
        main = sp[i], xlim = c(time[1],time[length(time)]),
        ylim =c(min(data[1:175,(8-i)]-sd[1:175,(8-i)]),max(data[1:175,(8-i)]+sd[1:175,(8-i)])))
   for(j in 1:5){ # temperature treatment
-  lines(time, data[seq(j,175,5),(8-i)], col = color[j], type="b", pch = 1)
-  arrows(x0=time, y0=data[seq(j,175,5),(8-i)]-sd[seq(j,175,5),(8-i)],
-           x1=time, y1=data[seq(j,175,5),(8-i)]+sd[seq(j,175,5),(8-i)],
-           code=3, angle=90, lwd=1, length = 0.05, col = color[j])
+    # if(j == 3| j == 2){
+      lines(time, data[seq(j,175,5),(8-i)], col = color[j], type="b", pch = 1)
+      arrows(x0=time, y0=data[seq(j,175,5),(8-i)]-sd[seq(j,175,5),(8-i)],
+             x1=time, y1=data[seq(j,175,5),(8-i)]+sd[seq(j,175,5),(8-i)],
+             code=3, angle=90, lwd=1, length = 0.05, col = color[j])
+    # }
   }
   abline(v = 13, lty = 3)
-  legend("topleft", c("10C","10_30C", "20C", "30C", "Ramping"), cex = 1,
-         col = color, pch = 1, lwd = 1)
+  legend("topleft", c(temp[3],temp[2]), cex = 1, col = c(color[3],color[2]), pch = 1, lwd = 1)
   # graphics.off()
 }
 graphics.off()
@@ -219,7 +220,7 @@ in_sd[is.na(in_sd)] = 0
 in_gr = data.frame()
 for(s in 1:7){ # 5 treatments, 7 species groups
   in_gr = rbind(in_gr,in_means[(5*(s-1)+1) : (5*(s-1)+5)])
-  }
+}
 
 ### all growth rate close to carrying capacity
 log_all = data.frame()
@@ -373,7 +374,7 @@ names(ra_OD_sd) = names(ra_mean[,1:9])
 ra_OD = cbind(ra_OD, data[,8:10])
 ra_OD_sd = cbind(ra_OD_sd, data[,8:10])
 
-pdf("../results/ra_OD.pdf")
+pdf("../results/Ramping_ra_OD.pdf")
 for(i in 1:length(temp)){
   for(j in 1:length(unique(sp_ra))){
     sp_ra_v = which(sp_ra == unique(sp_ra)[j])
