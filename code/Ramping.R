@@ -12,6 +12,20 @@ Ramping = Ramping[,-1] # removing numbering col
 Ramping = Ramping[,-ncol(Ramping)] # removing wavelength col
 names(Ramping) = seq(1,ncol(Ramping))
 
+### for timing each relative abundance with OD
+Ramping = Ramping[4:11]
+Ramping = Ramping[-seq(1, nrow(Ramping), 8),]
+Ramping = Ramping[-seq(7, nrow(Ramping), 7),]
+rownames(Ramping) = seq(1:1050)
+Ramping[which(is.na(Ramping[,2])),2] = Ramping[(which(is.na(Ramping[,2]))+1),2]
+Ramping[which(is.na(Ramping[,2])),2] = Ramping[(which(is.na(Ramping[,2]))+1),2]
+Ramping[,1:8] = Ramping[,1:8] - Ramping[,2]
+Ramping = Ramping[,-2]
+temp = c("10C","10_30C","20C","30C","Ramping")
+time = c(0,1,2,3,4,4,5,6,6,7,8,8,9,10,10,11,12,12,13,14,14,15,16,16,17,18,18,19,20,20,21,22,22,23,24)
+Ramping$temp = rep(temp[sort(rep(1:5,6))], 35)
+Ramping$Day = sort(rep(time, 6*5))
+Ramping$Rep = rep(1:6,(35*5))
 ######################## Mean and standard deviation ####################
 data = data.frame()
 sd = data.frame()
@@ -387,6 +401,105 @@ for(i in 1:length(temp)){
     lines(time,sub[,2], col = colors_ra[sp_ra_v][2], type="b", pch = 1)
     if(length(sp_ra_v) == 3){
       lines(time,sub[,3], col = colors_ra[sp_ra_v][3], type="b", pch = 1)
+    }
+    legend("topright", spinside[sp_ra_v], cex = 1, col = colors_ra[sp_ra_v], pch = 1, 
+           box.lty = 3, lwd = 1)
+  }
+}
+graphics.off()
+
+################################### OD * RA (reps) ######################################################
+Ramping_fat = data.frame(replicate(2, Ramping[,1],simplify = F), 
+                     replicate(2, Ramping[,2],simplify = F),
+                     replicate(2, Ramping[,3],simplify = F),
+                     replicate(3, Ramping[,4],simplify = F),Ramping[,8:10])
+names(Ramping_fat) = names(ra_p)
+Ramping_fat$group = c(sort(rep(seq(1,6,1), (30*3))), rep(6,30), rep(7,60), sort(rep(8:9,(30*3))), sort(rep(10:11,(30*4))))
+
+# group 1
+ra_rep = colMeans(ra_p[1:6,1:9], na.rm = T)
+ODra_rep = rbind(do.call("rbind", replicate(5, colMeans((ra_rep* Ramping_fat[Ramping_fat$Day == 0,1:9]), na.rm = T), simplify = FALSE)), 
+                 do.call("rbind", replicate(5, colMeans((ra_rep* Ramping_fat[Ramping_fat$Day == 1,1:9]), na.rm = T), simplify = FALSE)),
+                 do.call("rbind", replicate(5, colMeans((ra_rep* Ramping_fat[Ramping_fat$Day == 2,1:9]), na.rm = T), simplify = FALSE)))# the first part of the data frame
+ODra_rep_sd = rbind(do.call("rbind", replicate(5, apply((ra_rep* Ramping_fat[Ramping_fat$Day == 0,1:9]), 2, sd), simplify = FALSE)),
+                    do.call("rbind", replicate(5, apply((ra_rep* Ramping_fat[Ramping_fat$Day == 1,1:9]), 2, sd), simplify = FALSE)),
+                    do.call("rbind", replicate(5, apply((ra_rep* Ramping_fat[Ramping_fat$Day == 2,1:9]), 2, sd), simplify = FALSE)))# the first part of the data frame
+
+# groups 2-10
+list = do.call("rbind", replicate(3,list(c(1,2),c(3,4),c(5,6))))
+reps_data = data.frame()
+ra_all = data.frame()
+for(i in 1:9){
+  reps_data = rbind(reps_data, 
+                    subset(Ramping_fat, group == (i+1) & Rep == list[i,]))
+  subset = subset(ra_p, Day == (2*(i+1)))
+  b_subset = do.call("rbind",replicate((length(unique(Ramping_fat$Day[Ramping_fat$group == (i+1)]))+1), subset, simplify = FALSE))
+  ra_all = rbind(ra_all, b_subset)
+}
+
+abs_od = reps_data[1:9]*ra_all[1:9]
+abs_od = data.frame(abs_od, reps_data[10:13])
+
+mean = data.frame()
+sd = data.frame()
+for(i in 1:28){
+  subset = abs_od[((i-1)*10+1):(i*10),]
+  for(j in temp){
+    mean = rbind(mean, colMeans(subset[subset$temp == j,1:9],na.rm = T))
+    sd = rbind(sd, apply(subset[subset$temp == j,1:9], 2, sd))
+  }
+}
+colnames(mean) = colnames(ODra_rep)
+ODra_rep = rbind(ODra_rep, mean)
+colnames(sd) = colnames(ODra_rep_sd)
+ODra_rep_sd = rbind(ODra_rep_sd, sd)
+
+# group 11
+ra_rep = do.call("rbind", replicate(4, subset(ra_p, Day == 24), simplify = FALSE))
+data = cbind(Ramping_fat[Ramping_fat$group == 11,1:9]*ra_rep[1:9], Ramping_fat[Ramping_fat$group == 11,10:13])
+mean = data.frame()
+sd = data.frame()
+for(i in 1:4){
+  subset = data[((i-1)*30+1):(i*30),]
+  for(j in temp){
+    mean = rbind(mean, colMeans(subset[subset$temp == j,1:9],na.rm = T))
+    sd = rbind(sd, apply(subset[subset$temp == j,1:9], 2, sd))
+  }
+}
+colnames(mean) = colnames(ODra_rep)
+ODra_rep = rbind(ODra_rep, mean)
+colnames(sd) = colnames(ODra_rep_sd)
+ODra_rep_sd = rbind(ODra_rep_sd, sd)
+
+ODra_rep$day = sort(rep(time[0:35],5))
+ODra_rep_sd$day = sort(rep(time[0:35],5))
+ODra_rep$temp = rep(temp,35)
+ODra_rep_sd$temp = rep(temp,35)
+
+sp_ra = c(sp[sort(rep(4:7,2))],sp[7])
+spinside = c("S18", "W02", "S18", "W03", "W02", "W03", "S18", "W02", "W03")
+colors_ra = c("darkgreen", "blue", "darkgreen", "chocolate2", "blue", "chocolate2", "darkgreen", "blue", "chocolate2")
+
+pdf("../results/Ramping_ra_OD_errbar.pdf")
+for(i in temp){
+  for(j in unique(sp_ra)){
+    sp_ra_v = which(sp_ra == j)
+    sub = ODra_rep[ODra_rep$temp == i,sp_ra_v]
+    sub_sd = ODra_rep_sd[ODra_rep_sd$temp == i,sp_ra_v]
+    plot(1, type="n", xlab="Day", ylab = "OD",
+         main = paste(j,"_", i,sep=""),
+         xlim = c(time[1],time[length(time)]),
+         ylim =c(min((sub-sub_sd), na.rm = T), max(sub, na.rm = T)+max(sub_sd,na.rm = T)))
+    lines(time,sub[,1], col = colors_ra[sp_ra_v][1], type="b", pch = 1)
+    arrows(x0=time, y0=sub[,1]-sub_sd[,1], x1=time, y1=sub[,1]+sub_sd[,1],
+           code=3, angle=90, lwd=0.6, length = 0.05, colors_ra[sp_ra_v][1])
+    lines(time,sub[,2], col = colors_ra[sp_ra_v][2], type="b", pch = 1)
+    arrows(x0=time, y0=sub[,2]-sub_sd[,2], x1=time, y1=sub[,2]+sub_sd[,2], 
+           code=3, angle=90, lwd=0.6, length = 0.05, colors_ra[sp_ra_v][2])
+    if(length(sp_ra_v) == 3){
+      lines(time,sub[,3], col = colors_ra[sp_ra_v][3], type="b", pch = 1)
+      arrows(x0=time, y0=sub[,3]-sub_sd[,3], x1=time, y1=sub[,3]+sub_sd[,3],
+             code=3, angle=90, lwd=0.6, length = 0.05, col = colors_ra[sp_ra_v][3])
     }
     legend("topright", spinside[sp_ra_v], cex = 1, col = colors_ra[sp_ra_v], pch = 1, 
            box.lty = 3, lwd = 1)

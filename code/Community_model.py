@@ -93,7 +93,7 @@ def ass_temp_run(N, M, T, Tref, Ma, Ea_D, lf, p_value, typ, K):
     return result_array, alpha_0, alpha_E, alpha
 
 
-# result_array, alpha_0, alpha_E, alpha = ass_temp_run(N, M, T, Tref, Ma, Ea_D, lf, p_value, typ, K)
+result_array, alpha_0, alpha_E, alpha = ass_temp_run(N, M, T, Tref, Ma, Ea_D, lf, p_value, typ, K)
 
 # print(alpha)
 # print(alpha_0)
