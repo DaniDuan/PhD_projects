@@ -2,6 +2,7 @@ rm(list=ls())
 dev.off()
 
 library(minpack.lm)
+library(nls.multstart)
 
 d1 = read.csv("../data/TPC/Danica_TPC.csv")
 d2 = read.csv("../data/TPC/Danica_TPC_1.csv")
@@ -89,68 +90,114 @@ t = seq(time[1],time[length(time)] , 0.1)
 
 pdf("../results/TPC/TPCfitting_single_allreps.pdf")
 all_r = data.frame()
+all_AIC = data.frame()
 for(i in temp){
   for(rep in 1:6){
     subset = subset(TPC, temp == i & Rep == rep)
     subset[,1:3] = log(subset[,1:3])
     subset[subset == -Inf| subset == Inf] = NaN
-    if(i == 28){
-      subset[6:9,1] = NaN
-    }
     N_0_get = apply(subset[1:3], 2, min, na.rm =T) # minimum 
     K_get = apply(subset[1:3], 2, max, na.rm =T)
     slopes = apply(subset[1:3], 2, diff)
     slope_max = apply(slopes[-1,], 2, max, na.rm =T)
     r = c()
+    aic = c()
     for(s in 1:length(sp)){
-      while(any(is.na(subset[,s]))){
-        subset[which(is.na(subset[,s])),s] = subset[(which(is.na(subset[,s]))+1),s]
-      }
-      N_0_start = N_0_get[s]
-      K_start = K_get[s]
-      r_max_start = slope_max[s] 
-      t_lag_start = time[which.max(diff(diff(subset[,s])))] - time[1]
-      if(t_lag_start>40 || t_lag_start == 0){t_lag_start = 10}
-      sub = data.frame(subset[,s], subset$time)
-      names(sub) = c("N", "time")
-      # if(any(is.na(subset[,s]))){sub = sub[-is.na(sub),]}
-      model_fit = nlsLM(N~gompertz_model(t = time, r_max, K, N_0, t_lag), sub,
-                           list(t_lag=t_lag_start, r_max=r_max_start,
-                                N_0 = N_0_start, K = K_start), control = list(maxiter = 500))
-      gr = gompertz_model(t, summary(model_fit)$coefficients[2], 
-                          summary(model_fit)$coefficients[4], 
-                          summary(model_fit)$coefficients[3], 
-                          summary(model_fit)$coefficients[1])
-      r_value = round(summary(model_fit)$coefficients[2], 4)
-      Model = "Gompertz"
-      if(r_value > 2){
-        # sub = sub[-1,]
-        model_fit = nlsLM(N~logistic_model(t = time, r_max, K, N_0), sub,
-                             list(r_max=r_max_start, N_0 = N_0_start, K = K_start),
-                          control = list(maxiter = 500))
-        gr = logistic_model(t, summary(model_fit)$coefficients[1],
-                            summary(model_fit)$coefficients[3],
-                            summary(model_fit)$coefficients[2])
-        r_value = round(summary(model_fit)$coefficients[1], 4)
-        Model = "Logistic"
-      }
       plot(time,subset[,s], xlab = "Hour", ylab = "log(OD)",
            main = paste(sp[s],"_",i,"_",rep,sep="") , pch = 1)
-      text(60, ((max(subset[,s], na.rm = T)+min(subset[,s], na.rm = T))/2),
-           paste("r=",r_value, "\nAIC=",
-                 round(AIC(model_fit),3), "\nModel= ",
-                 Model, sep=""))
-      lines(t, gr)
+      if(s == 1 & i == 28){
+        r_value = 0
+        AIC_value = NaN
+      }else{
+        while(any(is.na(subset[,s]))){
+          subset[which(is.na(subset[,s])),s] = subset[(which(is.na(subset[,s]))+1),s]
+          }
+        N_0_start = N_0_get[s]
+        K_start = K_get[s]
+        r_max_start = slope_max[s] 
+        t_lag_start = time[which.max(diff(diff(subset[,s])))] - time[1]
+        if(t_lag_start>40 || t_lag_start == 0){t_lag_start = 10}
+        sub = data.frame(subset[,s], subset$time)
+        names(sub) = c("N", "time")
+        model_fit = nlsLM(N~gompertz_model(t = time, r_max, K, N_0, t_lag), sub,
+                                  start = list(r_max = r_max_start, K =K_start, 
+                                               N_0 = N_0_start, t_lag = t_lag_start), 
+                          control = list(maxiter = 500))
+        gr = gompertz_model(t, summary(model_fit)$coefficients[1], 
+                            summary(model_fit)$coefficients[2], 
+                            summary(model_fit)$coefficients[3], 
+                            summary(model_fit)$coefficients[4])
+        Model = "Gompertz"
+        if(summary(model_fit)$coefficients[1] > 1.2){
+          model_fit = nlsLM(N~logistic_model(t = time, r_max, K, N_0), sub,
+                               start = list(r_max=r_max_start, N_0 = N_0_start, K = K_start),
+                            control = list(maxiter = 500))
+          gr = logistic_model(t, summary(model_fit)$coefficients[1],
+                              summary(model_fit)$coefficients[3],
+                              summary(model_fit)$coefficients[2])
+          Model = "Logistic"
+        }
+        r_value = round(summary(model_fit)$coefficients[1], 4)
+        AIC_value = round(AIC(model_fit),3)
+        lines(t, gr)
+        text(60, ((max(subset[,s], na.rm = T)+min(subset[,s], na.rm = T))/2),
+             paste("r=",r_value, "\nAIC=",
+                   round(AIC(model_fit),3), "\nModel= ",
+                   Model, sep=""))
+      }
       r = c(r, r_value)
+      aic = c(aic, AIC_value)
     }
     all_r = rbind(all_r, r)
+    all_AIC = rbind(all_AIC, aic)
   }
 }
 # S18, 12C
 graphics.off()
 
+# x = all_r # backup
+# all_r = x
+all_r[all_r==0] = NaN
+all_r[all_AIC>20] = NaN
+# all_r[all_r>1.15] = NaN
+
 names(all_r) = sp
 all_r$temp = sort(rep(temp,6))
 all_r$Rep = rep(1:6,6)
-
+all_r$W02[all_r$temp == 22&all_r$Rep==5] = NaN # value too low, out of ordinary
+all_r$W02[all_r$temp == 28&all_r$Rep==5] = NaN # value too high, out of ordinary
+all_r[25:30,1:3][all_AIC[25:30,]>-5] = NaN
+all_r$S18[all_r$temp == 28] = 0
 # write.csv(all_r, "../results/TPC/Growth_rates.csv", row.names = F)
+# all_r = read.csv("../results/TPC/Growth_rates.csv")
+
+mean = data.frame()
+sd = data.frame()
+for(i in temp){
+  subset = subset(all_r, temp == i)
+  mean = rbind(mean, colMeans(subset[,1:3], na.rm = T))
+  sd = rbind(sd, apply(subset[,1:3], 2, sd, na.rm = T))
+}
+names(mean) = sp
+names(sd) = sp
+mean$temp = temp
+sd$temp = temp
+
+color = c("darkgreen","blue", "darkorange")
+
+pdf("../results/TPC/Temperature_performances.pdf")
+plot(1, type="n", xlab="Temperature", ylab = "Growth rate", main = "Temperature Performance",
+     xlim = c(temp[1],temp[length(temp)]),
+     ylim =c(min((mean[,1:3]-sd[,1:3]), na.rm = T),
+             max((mean[,1:3]+sd[,1:3]), na.rm = T)))
+for(i in 1:3){
+  lines(temp,mean[,i], type="b", pch = 1, col = color[i])
+  suppressWarnings(arrows(x0=temp, y0=mean[,i]-sd[,i], x1=temp, y1=mean[,i]+sd[,i],
+         code=3, angle=90, lwd=0.6, length = 0.05, col = color[i]))
+}
+legend("topleft", sp, cex = 1, col = color, pch = 1, lwd = 1)
+graphics.off()
+
+######################### Fitting TPC ##########################################
+
+
