@@ -302,12 +302,12 @@ whole_result = out_p # backup
 out_p = out_p[out_p$AIC < 20,] # screen out bad fits
 out_p = out_p[!is.na(out_p$Ea),]
 
-png(filename = "../results/TPC/Ea", width = 480, height = 480)
-boxplot(Ea~sp, data = out_p); graphics.off()
-png(filename = "../results/TPC/Th", width = 480, height = 480)
-boxplot(Th~sp, data = out_p); graphics.off()
-png(filename = "../results/TPC/lnB0", width = 480, height = 480)
-boxplot(lnB0~sp, data = out_p); graphics.off()
+# png(filename = "../results/TPC/Ea", width = 480, height = 480)
+boxplot(Ea~sp, data = out_p)#; graphics.off()
+# png(filename = "../results/TPC/Th", width = 480, height = 480)
+boxplot(Th~sp, data = out_p)#; graphics.off()
+# png(filename = "../results/TPC/lnB0", width = 480, height = 480)
+boxplot(lnB0~sp, data = out_p)#; graphics.off()
 # Ea
 summary(aov(Ea~sp, data = out_p)) # > 0.05
 pairwise.t.test(out_p$Ea, out_p$sp, p.adj = "none")
@@ -327,7 +327,7 @@ sd_TPC = data.frame(rbind(apply(out_p[out_p$sp == sp[1],1:7], 2, sd, na.rm = T),
                           apply(out_p[out_p$sp == sp[2],1:7], 2, sd, na.rm = T),
                           apply(out_p[out_p$sp == sp[3],1:7], 2, sd, na.rm = T)))
 
-png(filename = "../results/TPC/TPC_by_mean", width = 480, height = 480)
+# png(filename = "../results/TPC/TPC_by_mean", width = 480, height = 480)
 plot(1, type="n", xlab="Temperature", ylab = "Growth rate", main = "TPC_by_mean",
      xlim = c(temp[1],temp[length(temp)]),
      ylim =c(0,1.2))
@@ -337,4 +337,4 @@ for(s in 1:length(sp)){
   lines(temp_plot, exp(mean_school), col = color[s])
   # polygon(c(temp_plot, temp_plot), c(sd_school_low, sd_school_high), col = "grey")
 }
-graphics.off()
+# graphics.off()

@@ -486,6 +486,7 @@ for(i in temp){
     sp_ra_v = which(sp_ra == j)
     sub = ODra_rep[ODra_rep$temp == i,sp_ra_v]
     sub_sd = ODra_rep_sd[ODra_rep_sd$temp == i,sp_ra_v]
+    # png(filename = paste(("../results/Ramping_ra_OD_errbar/"),j,"_", i,sep=""), width = 480, height = 480)
     plot(1, type="n", xlab="Day", ylab = "OD",
          main = paste(j,"_", i,sep=""),
          xlim = c(time[1],time[length(time)]),
@@ -503,6 +504,7 @@ for(i in temp){
     }
     legend("topright", spinside[sp_ra_v], cex = 1, col = colors_ra[sp_ra_v], pch = 1, 
            box.lty = 3, lwd = 1)
+    # graphics.off()
   }
 }
 graphics.off()
