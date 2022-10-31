@@ -171,11 +171,13 @@ graphics.off()
 # x = all_r # backup
 # all_r = x
 all_r[all_r==0] = NaN
-all_r[all_AIC>15] = NaN
+# all_r[all_AIC>15] = NaN
+all_r[all_r>1.5] = NaN
 
 names(all_r) = sp
 all_r$temp = sort(rep(temp,6))
 all_r$Rep = rep(1:6,6)
+all_r$S18[all_r$S18<0.1] = NaN
 
 # write.csv(all_r, "../results/TPC/Growth_rates.csv", row.names = F)
 # all_r = read.csv("../results/TPC/Growth_rates.csv")
@@ -302,11 +304,11 @@ whole_result = out_p # backup
 out_p = out_p[out_p$AIC < 20,] # screen out bad fits
 out_p = out_p[!is.na(out_p$Ea),]
 
-# png(filename = "../results/TPC/Ea", width = 480, height = 480)
+# png(filename = "../results/TPC/Ea.png", width = 480, height = 480)
 boxplot(Ea~sp, data = out_p)#; graphics.off()
-# png(filename = "../results/TPC/Th", width = 480, height = 480)
+# png(filename = "../results/TPC/Th.png", width = 480, height = 480)
 boxplot(Th~sp, data = out_p)#; graphics.off()
-# png(filename = "../results/TPC/lnB0", width = 480, height = 480)
+# png(filename = "../results/TPC/lnB0.png", width = 480, height = 480)
 boxplot(lnB0~sp, data = out_p)#; graphics.off()
 # Ea
 summary(aov(Ea~sp, data = out_p)) # > 0.05
@@ -338,3 +340,63 @@ for(s in 1:length(sp)){
   # polygon(c(temp_plot, temp_plot), c(sd_school_low, sd_school_high), col = "grey")
 }
 # graphics.off()
+
+################################### Fitting with all reps ###################################
+library(rTPC)
+library(boot)
+library(car)
+
+mod = 'sharpeschoolhigh_1981'
+# get start vals
+# start_vals <- get_start_vals(all_r$temp, all_r$S18, model_name = 'sharpeschoolhigh_1981')
+
+all_rlog = data.frame(log(all_r[,1:3]), all_r$temp)
+names(all_rlog) = names(all_r[1:4])
+all_rlog$temp = all_rlog$temp+273.15
+
+initials = data.frame()
+for(s in 1:length(sp)){
+  # if(length(subset[,s][!is.na(subset[,s])]) > 4){
+  lnB0_start = min(all_r[1:6,s][!is.na(all_r[,s])], na.rm = T)
+  Th_v = all_r$temp[all_r[,s] == max(all_r[,s], na.rm = T)] #subset[,4][subset[,s] == max(subset[,s], na.rm = T)]
+  Th_start = Th_v[!is.na(Th_v)]
+  ## Fitting lnB ~ -1/k*(1/T-1/283.15) as linear model (Arrhenius)
+  ## intercept = lnB0, slope = Ea 
+  kkt = -1/(k*all_r$temp)+1/(285.15*k) # -1/k*(1/T-1/283.15)
+  befdeact = all_r[,s][all_r$temp <= Th_start] # lnB before deactivation
+  B_befT = kkt[all_r$temp <= Th_start] # -1/k*(1/T-1/283.15) before deactivation
+  lm_Arr = lm(befdeact~B_befT)
+  lnB0_start = summary(lm_Arr)$coefficients[1]
+  Ea_start = summary(lm_Arr)$coefficients[2]
+  row = data.frame(r_tref = exp(lnB0_start), e = Ea_start, eh = 7, th = Th_start)
+  initials = rbind(initials, row)
+}
+
+for(s in 1:3){
+  start_vals = initials[s,]
+  sub <- data.frame(N = all_r[,s], temp = all_r$temp)
+  # get limits
+  low_lims <- get_lower_lims(sub$temp, sub$N, model_name = 'sharpeschoolhigh_1981')
+  upper_lims <- get_upper_lims(sub$temp, sub$N, model_name = 'sharpeschoolhigh_1981')
+  
+  fit <- nls_multstart(N~sharpeschoolhigh_1981(temp = temp, r_tref,e,eh,th, tref = 12),
+                       data = sub,
+                       iter = 2000,
+                       start_lower = start_vals - 10,
+                       start_upper = start_vals + 10,
+                       lower = low_lims,
+                       upper = upper_lims,
+                       supp_errors = 'Y')
+  plot(sub$temp, sub$N, main = sp[s],
+       ylim = c(min(sub$N, na.rm = T), (max(sub$N, na.rm = T)+0.2)))
+  out = as.numeric(c(start_vals, summary(fit)$coefficients[1:4], AIC(fit)))
+  B0 = out[5]; Ea = out[6]; Eh = out[7]; Th = out[8]
+  B_plot = sharpeschoolhigh_1981(temp = temp_plot, r_tref = B0, e = Ea, eh = Eh, th = Th, tref = 12)
+  lines(temp_plot, B_plot, col = 'black') 
+}
+
+fit <- nlsLM(S18~sharpeschoolhigh_1981(temp = temp, r_tref,e,eh,th, tref = 12),
+       data = all_r, start = list(r_tref=B0, e=Ea, eh=Eh, th=Th), 
+       control = list(maxiter = 500))
+bootresult <-  Boot(fit, method = 'case')
+bootresult
