@@ -3,6 +3,9 @@ dev.off()
 
 library(minpack.lm)
 library(nls.multstart)
+library(tidyverse)
+library(broom)
+library(ggplot2)
 
 d1 = read.csv("../data/TPC/Danica_TPC.csv")
 d2 = read.csv("../data/TPC/Danica_TPC_1.csv")
@@ -149,8 +152,7 @@ for(i in temp){
         lines(t, gr_logistic, col = "darkorange")
       }else{r_value_logistic = NaN; AIC_value_logistic = NaN}
     # }
-      if(min(AIC_value_logistic, AIC_value_gompertz, na.rm = T) == AIC_value_logistic &
-         r_value_logistic != 0 |r_value_gompertz > 1.2){ 
+      if(is.nan(AIC_value_gompertz) | AIC_value_logistic - AIC_value_gompertz < -3 & r_value_logistic != 0 |r_value_gompertz > 1.5){ 
         Model = "Logistic"; r_value = r_value_logistic; AIC_value = AIC_value_logistic
         }else{Model = "Gompertz"; r_value = r_value_gompertz; AIC_value = AIC_value_gompertz}
       text(60, ((max(subset[,s], na.rm = T)+min(subset[,s], na.rm = T))/2),
@@ -173,11 +175,14 @@ graphics.off()
 all_r[all_r==0] = NaN
 # all_r[all_AIC>15] = NaN
 all_r[all_r>1.5] = NaN
+all_r$W02[35] = NaN # value too much higher than all other 5 replicates
+all_r$W02[23] = NaN # value too much lower than all other 5 replicates
+all_r$S18[all_r$S18<0.1] = NaN # Irregular low value comparing with the point plot
+
 
 names(all_r) = sp
 all_r$temp = sort(rep(temp,6))
 all_r$Rep = rep(1:6,6)
-all_r$S18[all_r$S18<0.1] = NaN
 
 # write.csv(all_r, "../results/TPC/Growth_rates.csv", row.names = F)
 # all_r = read.csv("../results/TPC/Growth_rates.csv")
@@ -210,137 +215,6 @@ for(i in 1:3){
 legend("topleft", sp, cex = 1, col = color, pch = 1, lwd = 1)
 graphics.off()
 
-######################### Fitting TPC ##########################################
-
-# Schoolfield <- function(lnc, E, Eh, Th, temp, Tc) {# The calculatied result is lnB
-#   Tc <- 273.15 + Tc
-#   k <- 8.62e-5
-#   sch <- lnc-(E/k)*(1/temp - 1/Tc)-log(1+(E/(Eh-E))*exp((Eh/k)*(1/Th - 1/temp)))
-#   return(sch)
-# }
-Schoolfield <- function(lnc, E, Eh, Th, temp, Tc) {
-  Tc <- 273.15 + Tc
-  k <- 8.62e-5
-  boltzmann.term <- lnc + log(exp(E/k*(1/Tc - 1/temp)))
-  inactivation.term <- log(1/(1 + exp(Eh/k*(1/Th - 1/temp))))
-  return(boltzmann.term + inactivation.term)
-}
-
-temp_plot = seq(temp[1], temp[length(temp)], 0.1)
-k <- 8.62e-5
-
-pdf("../results/TPC/TPC_all_reps.pdf")
-out_p = data.frame()
-for(s in 1:length(sp)){
-  for(rep in 1:6){
-    subset = all_r[all_r$Rep == rep,]
-    subset[,1:3] = log(subset[,1:3])
-    subset[subset == -Inf] = NaN
-    subset$S18[6] = 0
-    subset$temp = subset$temp + 273.15
-    if(length(subset[,s][!is.na(subset[,s])]) > 4){
-      lnB0_start = subset[,s][!is.na(subset[,s])][1]
-      Th_v = subset[,4][subset[,s] == max(subset[,s], na.rm = T)]
-      Th_start_v = Th_v[!is.na(Th_v)]
-      ## Fitting lnB ~ -1/k*(1/T-1/283.15) as linear model (Arrhenius)
-      ## intercept = lnB0, slope = Ea 
-      kkt = -1/(k*subset$temp)+1/(285.15*k) # -1/k*(1/T-1/283.15)
-      befdeact = subset[,s][subset$temp <= Th_start_v] # lnB before deactivation
-      B_befT = kkt[subset$temp <= Th_start_v] # -1/k*(1/T-1/283.15) before deactivation
-      lm_Arr = lm(befdeact~B_befT)
-      lnB0_start_v = summary(lm_Arr)$coefficients[1]
-      Ea_start_v = summary(lm_Arr)$coefficients[2]
-      sub = data.frame(N = subset[,s], temp = subset$temp)
-      results = data.frame()
-      for(n in 1:500){
-        lnB0_start = rnorm(1, mean = lnB0_start_v, sd = 1)
-        Ea_start = rnorm(1, mean = Ea_start_v, sd = 1)
-        Eh_start = runif(1, 1, 10)
-        Th_start = rnorm(1, mean = Th_start_v, sd = 10)
-        fit_Schoolfield = try(nlsLM(N ~ Schoolfield(lnc, E, Eh, Th, temp, Tc = 12), sub,
-                        start = list(lnc=lnB0_start, E=Ea_start, Eh=Eh_start, Th=Th_start),
-                        upper = c(1, 3, Inf, 301.15),
-                        lower = c(-Inf, 0, 0, 283.15),
-                        control = list(maxiter = 500, maxfev = 200), na.action = na.omit), silent = T)
-        if(class(fit_Schoolfield) != "try-error"){
-        results = rbind(results, c(summary(fit_Schoolfield)$coefficients[1:4], AIC(fit_Schoolfield)))
-        }
-      }
-      out = as.numeric(c(lnB0_start_v, Ea_start_v, Th_start_v, results[results[,5] == min(results[,5]),][1,]))
-      lnB0 = out[4]; Ea = out[5]; Eh = out[6]; Th = out[7]
-      B_plot = exp(Schoolfield(lnB0, Ea, Eh, Th, temp = temp_plot+273.15, Tc = 12))
-      # B_plot_arr = exp(Schoolfield(lnB0_start_v, Ea_start_v, (5*Ea_start_v), Th_start_v, temp = temp_plot+273.15, Tc = 12))
-
-      # png(filename = paste(("../results/TPC/TPC_all_reps/"),sp[s], "_", rep, sep = ""), width = 480, height = 480)
-      plot((subset$temp - 273.15), all_r[all_r$Rep == rep,s], main = paste(sp[s], "_", rep, sep = ""),
-           ylim = c(min(all_r[all_r$Rep == rep,s], na.rm = T),
-                    (max(all_r[all_r$Rep == rep,s], na.rm = T)+0.2)))
-      lines(temp_plot, B_plot, col = 'black') 
-      # lines(temp_plot, B_plot_arr, col = 'blue')
-      # legend("topleft", c("Schoolfield", "Arrhenius"), cex = 1,col = c('black','blue'), lwd = 1)
-      out_p = rbind(out_p, out)
-      # graphics.off()
-    }else{
-      # png(filename = paste(("../results/TPC/TPC_all_reps/"),sp[s], "_", rep, sep = ""), width = 480, height = 480)
-      
-      plot((subset$temp - 273.15), all_r[all_r$Rep == rep,s], main = paste(sp[s], "_", rep, sep = ""),
-           ylim = c(min(all_r[all_r$Rep == rep,s], na.rm = T),
-                    (max(all_r[all_r$Rep == rep,s], na.rm = T)+0.2)))
-      out = rep(NaN, 8)
-      out_p = rbind(out_p, out)
-      # graphics.off()
-    } 
-  }
-}
-names(out_p) = c("lnB0_Arr","Ea_Arr", "Th_Arr", "lnB0", "Ea", "Eh", "Th", "AIC")
-out_p$Rep = rep(1:6,3)
-out_p$sp = sort(rep(sp,6))
-graphics.off()
-whole_result = out_p # backup
-# write.csv(whole_result, "../results/TPC/TPCs.csv", row.names = F)
-# whole_result = read.csv("../results/TPC/TPCs.csv")
-# out_p = whole_result
-
-out_p = out_p[out_p$AIC < 20,] # screen out bad fits
-out_p = out_p[!is.na(out_p$Ea),]
-
-# png(filename = "../results/TPC/Ea.png", width = 480, height = 480)
-boxplot(Ea~sp, data = out_p)#; graphics.off()
-# png(filename = "../results/TPC/Th.png", width = 480, height = 480)
-boxplot(Th~sp, data = out_p)#; graphics.off()
-# png(filename = "../results/TPC/lnB0.png", width = 480, height = 480)
-boxplot(lnB0~sp, data = out_p)#; graphics.off()
-# Ea
-summary(aov(Ea~sp, data = out_p)) # > 0.05
-pairwise.t.test(out_p$Ea, out_p$sp, p.adj = "none")
-
-# Th
-summary(aov(Th~sp, data = out_p)) # > 0.1
-pairwise.t.test(out_p$Th, out_p$sp, p.adj = "none") # all > 0.1
-
-# lnB0
-summary(aov(lnB0~sp, data = out_p)) # > 0.1
-pairwise.t.test(out_p$lnB0, out_p$sp, p.adj = "none") # all > 0.1
-
-mean_TPC = data.frame(rbind(colMeans(out_p[out_p$sp == sp[1],1:7], na.rm = T),
-                            colMeans(out_p[out_p$sp == sp[2],1:7], na.rm = T),
-                            colMeans(out_p[out_p$sp == sp[3],1:7], na.rm = T)))
-sd_TPC = data.frame(rbind(apply(out_p[out_p$sp == sp[1],1:7], 2, sd, na.rm = T), 
-                          apply(out_p[out_p$sp == sp[2],1:7], 2, sd, na.rm = T),
-                          apply(out_p[out_p$sp == sp[3],1:7], 2, sd, na.rm = T)))
-
-# png(filename = "../results/TPC/TPC_by_mean", width = 480, height = 480)
-plot(1, type="n", xlab="Temperature", ylab = "Growth rate", main = "TPC_by_mean",
-     xlim = c(temp[1],temp[length(temp)]),
-     ylim =c(0,1.2))
-for(s in 1:length(sp)){
-  mean_school = Schoolfield(lnc = mean_TPC[s,4], E = mean_TPC[s,5], Eh = mean_TPC[s,6],
-                            Th = mean_TPC[s,7], temp = (temp_plot+273.15), Tc = 12)
-  lines(temp_plot, exp(mean_school), col = color[s])
-  # polygon(c(temp_plot, temp_plot), c(sd_school_low, sd_school_high), col = "grey")
-}
-# graphics.off()
-
 ################################### Fitting with all reps ###################################
 library(rTPC)
 library(boot)
@@ -350,9 +224,9 @@ mod = 'sharpeschoolhigh_1981'
 # get start vals
 # start_vals <- get_start_vals(all_r$temp, all_r$S18, model_name = 'sharpeschoolhigh_1981')
 
-all_rlog = data.frame(log(all_r[,1:3]), all_r$temp)
-names(all_rlog) = names(all_r[1:4])
-all_rlog$temp = all_rlog$temp+273.15
+# all_rlog = data.frame(log(all_r[,1:3]), all_r$temp)
+# names(all_rlog) = names(all_r[1:4])
+# all_rlog$temp = all_rlog$temp+273.15
 
 initials = data.frame()
 for(s in 1:length(sp)){
@@ -372,6 +246,7 @@ for(s in 1:length(sp)){
   initials = rbind(initials, row)
 }
 
+est_params = data.frame()
 for(s in 1:3){
   start_vals = initials[s,]
   sub <- data.frame(N = all_r[,s], temp = all_r$temp)
@@ -393,10 +268,92 @@ for(s in 1:3){
   B0 = out[5]; Ea = out[6]; Eh = out[7]; Th = out[8]
   B_plot = sharpeschoolhigh_1981(temp = temp_plot, r_tref = B0, e = Ea, eh = Eh, th = Th, tref = 12)
   lines(temp_plot, B_plot, col = 'black') 
+  est_params = rbind(est_params, out)
+}
+names(est_params) = c("lnB0_Arr","Ea_Arr","Eh_Arr", "Th_Arr", "B0", "Ea", "Eh", "Th", "AIC")
+est_params$sp = sp
+
+for(s in 1:length(sp)){
+  B0 = est_params[s,5]; Ea = est_params[s,6]; Eh = est_params[s,7]; Th = est_params[s,8]
+  if(s == 1){
+    fit <- nlsLM(S18~sharpeschoolhigh_1981(temp = temp, r_tref,e,eh,th, tref = 12),
+                 data = all_r, start = list(r_tref=B0, e=Ea, eh=Eh, th=Th),
+                 control = list(maxiter = 500))
+  }else if(s == 2){
+    fit <- nlsLM(W02~sharpeschoolhigh_1981(temp = temp, r_tref,e,eh,th, tref = 12),
+                 data = all_r, start = list(r_tref=B0, e=Ea, eh=Eh, th=Th),
+                 control = list(maxiter = 500))
+  }else{
+  fit <- nlsLM(W03~sharpeschoolhigh_1981(temp = temp, r_tref,e,eh,th, tref = 12),
+               data = all_r, start = list(r_tref=B0, e=Ea, eh=Eh, th=Th),
+               control = list(maxiter = 500))
+  }
+  bootresult <-  Boot(fit, method = 'case')
+  png(filename = paste("../results/TPC/", sp[s], "_TPC_boot.png", sep = ""), width = 960, height = 960)
+  hist(bootresult, layout = c(2,2))
+  graphics.off()
+  
+  sub <- data.frame(N = all_r[,s], temp = all_r$temp)
+  d_fit <- nest(sub, data = c(temp, N)) %>%
+    mutate(sharpeschoolhigh = map(data, ~nlsLM(N~sharpeschoolhigh_1981(temp = temp, r_tref,e,eh,th, tref = 12),
+                                               data = .x, start = list(r_tref=B0, e=Ea, eh=Eh, th=Th), 
+                                               control = list(maxiter = 500))),
+           # create new temperature data
+           new_data = map(data, ~tibble(temp = seq(min(.x$temp), max(.x$temp), length.out = 100))),
+           # predict over that data,
+           preds =  map2(sharpeschoolhigh, new_data, ~augment(.x, newdata = .y)))
+  
+  # unnest predictions
+  d_preds <- select(d_fit, preds) %>%
+    unnest(preds)
+  
+  boot1_preds <- bootresult$t %>%
+    as.data.frame() %>%
+    drop_na() %>%
+    mutate(iter = 1:n()) %>%
+    group_by_all() %>%
+    do(data.frame(temp = seq(min(all_r$temp), max(all_r$temp), length.out = 100))) %>%
+    ungroup() %>%
+    mutate(pred = sharpeschoolhigh_1981(temp, r_tref, e, eh, th, tref = 12))
+  
+  # calculate bootstrapped confidence intervals
+  boot1_conf_preds <- group_by(boot1_preds, temp) %>%
+    summarise(conf_lower = quantile(pred, 0.025),
+              conf_upper = quantile(pred, 0.975)) %>%
+    ungroup()
+  
+  # # plot bootstrapped CIs
+  # p1 <- ggplot() +
+  #   geom_line(aes(temp, .fitted), d_preds, col = 'blue') +
+  #   geom_ribbon(aes(temp, ymin = conf_lower, ymax = conf_upper), boot1_conf_preds, fill = 'blue', alpha = 0.3) +
+  #   geom_point(aes(temp, N), sub, size = 2, alpha = 0.5) +
+  #   theme_bw(base_size = 12) +
+  #   labs(x = 'Temperature (ºC)',
+  #        y = 'Growth rate',
+  #        title = 'Growth rate across temperatures')
+  
+  # plot bootstrapped predictions
+  png(filename = paste("../results/TPC/",sp[s], "_TPC.png", sep = ""), width = 960, height = 960)
+  ggplot() +
+    geom_line(aes(temp, .fitted), d_preds, col = 'blue') +
+    geom_line(aes(temp, pred, group = iter), boot1_preds, col = 'blue', alpha = 0.01) +
+    geom_point(aes(temp, N), sub, size = 2, alpha = 0.5) +
+    theme_bw(base_size = 12) +
+    labs(x = 'Temperature (ºC)',
+         y = 'Growth rate',
+         title = paste(sp[s],'Growth rate across temperatures'))
+  graphics.off()
 }
 
-fit <- nlsLM(S18~sharpeschoolhigh_1981(temp = temp, r_tref,e,eh,th, tref = 12),
-       data = all_r, start = list(r_tref=B0, e=Ea, eh=Eh, th=Th), 
-       control = list(maxiter = 500))
-bootresult <-  Boot(fit, method = 'case')
-bootresult
+###############################
+png(filename = "../results/TPC/TPC_fitted.png", width = 480, height = 480)
+plot(1, type="n", xlab="Temperature", ylab = "Growth rate", main = "TPC_fitted",
+     xlim = c(temp[1],temp[length(temp)]),
+     ylim =c(0,1.2))
+for(s in 1:length(sp)){
+  mean_school = sharpeschoolhigh_1981(temp = temp_plot,  r_tref = est_params$B0[s], 
+                                      e = est_params$Ea[s], eh = est_params$Eh[s],
+                                      th = est_params$Th[s], tref = 12)
+  lines(temp_plot, mean_school, col = color[s])
+}
+graphics.off()
