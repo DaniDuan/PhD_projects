@@ -1,17 +1,13 @@
 using DifferentialEquations
 using Plots
+using Random, Distributions
 
 include("./temp_params.jl")
 
-# test parameters
-N = 2;
-r = [0.1, 0.4];
-α = [-0.2 -0.1;
-     -0.1 -0.2]
-tspan = (0,100);
-C0 = fill(0.1, N)
-
-p = (N = N, r = r, α = α)
+# test
+N = 5
+T = 15+273.15
+p = Params(N, T)
 
 # the ODE function
 function GLV_model!(dx, x, p, t)
