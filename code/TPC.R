@@ -175,14 +175,14 @@ graphics.off()
 all_r[all_r==0] = NaN
 # all_r[all_AIC>15] = NaN
 all_r[all_r>1.5] = NaN
-all_r$W02[35] = NaN # value too much higher than all other 5 replicates
-all_r$W02[23] = NaN # value too much lower than all other 5 replicates
-all_r$S18[all_r$S18<0.1] = NaN # Irregular low value comparing with the point plot
-
 
 names(all_r) = sp
 all_r$temp = sort(rep(temp,6))
 all_r$Rep = rep(1:6,6)
+
+all_r$W02[35] = NaN # value too much higher than all other 5 replicates
+all_r$W02[23] = NaN # value too much lower than all other 5 replicates
+all_r$S18[all_r$S18<0.1] = NaN # Irregular low value comparing with the point plot
 
 # write.csv(all_r, "../results/TPC/Growth_rates.csv", row.names = F)
 # all_r = read.csv("../results/TPC/Growth_rates.csv")
@@ -227,6 +227,7 @@ mod = 'sharpeschoolhigh_1981'
 # all_rlog = data.frame(log(all_r[,1:3]), all_r$temp)
 # names(all_rlog) = names(all_r[1:4])
 # all_rlog$temp = all_rlog$temp+273.15
+k = 8.61*10^(-5)
 
 initials = data.frame()
 for(s in 1:length(sp)){
@@ -245,6 +246,8 @@ for(s in 1:length(sp)){
   row = data.frame(r_tref = exp(lnB0_start), e = Ea_start, eh = 7, th = Th_start)
   initials = rbind(initials, row)
 }
+
+temp_plot = seq(10,30,0.1)
 
 est_params = data.frame()
 for(s in 1:3){
@@ -341,19 +344,22 @@ for(s in 1:length(sp)){
     theme_bw(base_size = 12) +
     labs(x = 'Temperature (ºC)',
          y = 'Growth rate',
-         title = paste(sp[s],'Growth rate across temperatures'))
+         title = paste(sp[s],'Growth rate across temperatures'))+ 
+    theme(text = element_text(size = 30))
   graphics.off()
 }
 
 ###############################
-png(filename = "../results/TPC/TPC_fitted.png", width = 480, height = 480)
+png(filename = "../results/TPC/TPC_fitted.png", width = 960, height = 960)
 plot(1, type="n", xlab="Temperature", ylab = "Growth rate", main = "TPC_fitted",
      xlim = c(temp[1],temp[length(temp)]),
-     ylim =c(0,1.2))
+     ylim =c(0,1.2), 
+     cex.lab=2, cex.axis=2, cex.main=2.5)
 for(s in 1:length(sp)){
   mean_school = sharpeschoolhigh_1981(temp = temp_plot,  r_tref = est_params$B0[s], 
                                       e = est_params$Ea[s], eh = est_params$Eh[s],
                                       th = est_params$Th[s], tref = 12)
-  lines(temp_plot, mean_school, col = color[s])
+  lines(temp_plot, mean_school, col = color[s], lwd = 2)
 }
 graphics.off()
+
