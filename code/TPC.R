@@ -97,6 +97,7 @@ TPC$S18[TPC$temp == 28 & (TPC$time > 30 & TPC$time < 50)] # removing irregular m
 pdf("../results/TPC/TPC_gr_fitting_single_allreps.pdf")
 
 all_r = data.frame()
+all_K = data.frame()
 all_AIC = data.frame()
 for(i in temp){
   for(rep in 1:6){
@@ -107,7 +108,7 @@ for(i in temp){
     K_get = apply(subset[1:3], 2, max, na.rm =T)
     slopes = apply(subset[1:3], 2, diff)
     slope_max = apply(slopes[-1,], 2, max, na.rm =T)
-    r = c() ; aic = c()
+    r = c() ; K = c(); aic = c()
     for(s in 1:length(sp)){
       if(s == 1 & i == 28){ subset[subset$time >30 & subset$time < 55,1] = NaN }
       # png(filename = paste(("../results/TPC/TPC_gr_fitting_single_allreps/"),sp[s],"_",i,"_",rep,sep=""), width = 480, height = 480)
@@ -130,13 +131,14 @@ for(i in temp){
                         control = list(maxiter = 500)),silent = T)
       if(class(model_fit_gompertz) != "try-error"){
         r_value_gompertz = round(summary(model_fit_gompertz)$coefficients[1], 4)
+        K_value_gompertz = round(summary(model_fit_gompertz)$coefficients[2], 4)
         AIC_value_gompertz = round(AIC(model_fit_gompertz),3)
         gr_gompertz = gompertz_model(t, summary(model_fit_gompertz)$coefficients[1], 
                                      summary(model_fit_gompertz)$coefficients[2], 
                                      summary(model_fit_gompertz)$coefficients[3], 
                                      summary(model_fit_gompertz)$coefficients[4])
         lines(t, gr_gompertz, col = "blue")
-      }else{r_value_gompertz = NaN; AIC_value_gompertz = NaN}
+      }else{r_value_gompertz = NaN; K_value_gompertz = NaN; AIC_value_gompertz = NaN}
       
       # fitting logistic
       model_fit_logistic = try(nlsLM(N~logistic_model(t = time, r_max, K, N_0), sub,
@@ -144,26 +146,28 @@ for(i in temp){
                         control = list(maxiter = 500)),silent = T)
       if(class(model_fit_logistic) != "try-error"){
         r_value_logistic = round(summary(model_fit_logistic)$coefficients[1], 4)
+        K_value_logistic = round(summary(model_fit_logistic)$coefficients[3], 4)
         AIC_value_logistic = round(AIC(model_fit_logistic),3)
-        
         gr_logistic = logistic_model(t, summary(model_fit_logistic)$coefficients[1], 
                   summary(model_fit_logistic)$coefficients[3], 
                   summary(model_fit_logistic)$coefficients[2])
         lines(t, gr_logistic, col = "darkorange")
-      }else{r_value_logistic = NaN; AIC_value_logistic = NaN}
+      }else{r_value_logistic = NaN; K_value_logistic = NaN; AIC_value_logistic = NaN}
     # }
       if(is.nan(AIC_value_gompertz) | AIC_value_logistic - AIC_value_gompertz < -3 & r_value_logistic != 0 |r_value_gompertz > 1.5){ 
-        Model = "Logistic"; r_value = r_value_logistic; AIC_value = AIC_value_logistic
-        }else{Model = "Gompertz"; r_value = r_value_gompertz; AIC_value = AIC_value_gompertz}
+        Model = "Logistic"; r_value = r_value_logistic; K_value = K_value_logistic; AIC_value = AIC_value_logistic
+        }else{Model = "Gompertz"; r_value = r_value_gompertz; K_value = K_value_gompertz; AIC_value = AIC_value_gompertz}
       text(60, ((max(subset[,s], na.rm = T)+min(subset[,s], na.rm = T))/2),
            paste("r=",r_value,"\nModel= ", Model, sep=""))
       legend("topleft", c("Gompertz", "Logistic"), col = c("blue", "darkorange"), lty = 1)
       # }
       # graphics.off()
       r = c(r, r_value)
+      K = c(K, exp(K_value))
       aic = c(aic, AIC_value)
     }
     all_r = rbind(all_r, r)
+    all_K = rbind(all_K, K)
     all_AIC = rbind(all_AIC, aic)
   }
 }
@@ -172,50 +176,57 @@ graphics.off()
 
 # x = all_r # backup
 # all_r = x
+all_K[all_r==0] = NaN
 all_r[all_r==0] = NaN
 # all_r[all_AIC>15] = NaN
+all_K[all_r>1.5] = NaN
 all_r[all_r>1.5] = NaN
 
 names(all_r) = sp
+names(all_K) = sp
 all_r$temp = sort(rep(temp,6))
+all_K$temp = sort(rep(temp,6))
 all_r$Rep = rep(1:6,6)
+all_K$Rep = rep(1:6,6)
 
 all_r$W02[35] = NaN # value too much higher than all other 5 replicates
+all_K$W02[35] = NaN
 all_r$W02[23] = NaN # value too much lower than all other 5 replicates
-all_r$S18[all_r$S18<0.1] = NaN # Irregular low value comparing with the point plot
-
+all_K$W02[23] = NaN
+all_K$S18[all_r$S18<0.1] = NaN # Irregular low value comparing with the point plot
+all_r$S18[all_r$S18<0.1] = NaN
 # write.csv(all_r, "../results/TPC/Growth_rates.csv", row.names = F)
 # all_r = read.csv("../results/TPC/Growth_rates.csv")
 
-mean = data.frame()
-sd = data.frame()
-for(i in temp){
-  subset = subset(all_r, temp == i)
-  mean = rbind(mean, colMeans(subset[,1:3], na.rm = T))
-  sd = rbind(sd, apply(subset[,1:3], 2, sd, na.rm = T))
-}
-names(mean) = sp
-names(sd) = sp
-mean$temp = temp
-sd$temp = temp
-
+# mean = data.frame()
+# sd = data.frame()
+# for(i in temp){
+#   subset = subset(all_r, temp == i)
+#   mean = rbind(mean, colMeans(subset[,1:3], na.rm = T))
+#   sd = rbind(sd, apply(subset[,1:3], 2, sd, na.rm = T))
+# }
+# names(mean) = sp
+# names(sd) = sp
+# mean$temp = temp
+# sd$temp = temp
+# 
 color = c("darkgreen","blue", "darkorange")
+# 
+# pdf("../results/TPC/Temperature_performances.pdf")
+# # png(filename = "../results/TPC/Temperature_performances.png", width = 480, height = 480)
+# plot(1, type="n", xlab="Temperature", ylab = "Growth rate", main = "Temperature Performance",
+#      xlim = c(temp[1],temp[length(temp)]),
+#      ylim =c(min((mean[,1:3]-sd[,1:3]), na.rm = T),
+#              max((mean[,1:3]+sd[,1:3]), na.rm = T)))
+# for(i in 1:3){
+#   lines(temp,mean[,i], type="b", pch = 1, col = color[i])
+#   suppressWarnings(arrows(x0=temp, y0=mean[,i]-sd[,i], x1=temp, y1=mean[,i]+sd[,i],
+#          code=3, angle=90, lwd=0.6, length = 0.05, col = color[i]))
+# }
+# legend("topleft", sp, cex = 1, col = color, pch = 1, lwd = 1)
+# graphics.off()
 
-pdf("../results/TPC/Temperature_performances.pdf")
-# png(filename = "../results/TPC/Temperature_performances.png", width = 480, height = 480)
-plot(1, type="n", xlab="Temperature", ylab = "Growth rate", main = "Temperature Performance",
-     xlim = c(temp[1],temp[length(temp)]),
-     ylim =c(min((mean[,1:3]-sd[,1:3]), na.rm = T),
-             max((mean[,1:3]+sd[,1:3]), na.rm = T)))
-for(i in 1:3){
-  lines(temp,mean[,i], type="b", pch = 1, col = color[i])
-  suppressWarnings(arrows(x0=temp, y0=mean[,i]-sd[,i], x1=temp, y1=mean[,i]+sd[,i],
-         code=3, angle=90, lwd=0.6, length = 0.05, col = color[i]))
-}
-legend("topleft", sp, cex = 1, col = color, pch = 1, lwd = 1)
-graphics.off()
-
-################################### Fitting with all reps ###################################
+############################## Fitting with all reps for r ###################################
 library(rTPC)
 library(boot)
 library(car)
@@ -336,7 +347,7 @@ for(s in 1:length(sp)){
   #        title = 'Growth rate across temperatures')
   
   # plot bootstrapped predictions
-  png(filename = paste("../results/TPC/",sp[s], "_TPC.png", sep = ""), width = 960, height = 960)
+  png(filename = paste("../results/TPC/",sp[s], "_TPC_K.png", sep = ""), width = 960, height = 960)
   ggplot() +
     geom_line(aes(temp, .fitted), d_preds, col = 'blue') +
     geom_line(aes(temp, pred, group = iter), boot1_preds, col = 'blue', alpha = 0.01) +
@@ -350,7 +361,7 @@ for(s in 1:length(sp)){
 }
 
 ###############################
-png(filename = "../results/TPC/TPC_fitted.png", width = 960, height = 960)
+png(filename = "../results/TPC/TPC_fitted_K.png", width = 960, height = 960)
 plot(1, type="n", xlab="Temperature", ylab = "Growth rate", main = "TPC_fitted",
      xlim = c(temp[1],temp[length(temp)]),
      ylim =c(0,1.2), 
@@ -362,4 +373,3 @@ for(s in 1:length(sp)){
   lines(temp_plot, mean_school, col = color[s], lwd = 2)
 }
 graphics.off()
-
