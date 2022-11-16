@@ -198,6 +198,8 @@ all_r$S18[all_r$S18<0.1] = NaN
 # write.csv(all_r, "../results/TPC/Growth_rates.csv", row.names = F)
 # all_r = read.csv("../results/TPC/Growth_rates.csv")
 
+all_a = cbind(all_r[,1:3]/all_K[,1:3], all_r[,4:5])
+
 # mean = data.frame()
 # sd = data.frame()
 # for(i in temp){
@@ -240,6 +242,9 @@ mod = 'sharpeschoolhigh_1981'
 # all_rlog$temp = all_rlog$temp+273.15
 k = 8.61*10^(-5)
 
+###################!!!!! Using the same code for a ##############
+all_r = all_K
+
 initials = data.frame()
 for(s in 1:length(sp)){
   # if(length(subset[,s][!is.na(subset[,s])]) > 4){
@@ -254,7 +259,8 @@ for(s in 1:length(sp)){
   lm_Arr = lm(befdeact~B_befT)
   lnB0_start = summary(lm_Arr)$coefficients[1]
   Ea_start = summary(lm_Arr)$coefficients[2]
-  row = data.frame(r_tref = exp(lnB0_start), e = Ea_start, eh = 7, th = Th_start)
+  # row = data.frame(r_tref = exp(lnB0_start), e = Ea_start, eh = 7, th = Th_start)
+  row = data.frame(r_tref = lnB0_start, e = Ea_start, eh = 7, th = Th_start)
   initials = rbind(initials, row)
 }
 
@@ -281,7 +287,9 @@ for(s in 1:3){
   out = as.numeric(c(start_vals, summary(fit)$coefficients[1:4], AIC(fit)))
   B0 = out[5]; Ea = out[6]; Eh = out[7]; Th = out[8]
   B_plot = sharpeschoolhigh_1981(temp = temp_plot, r_tref = B0, e = Ea, eh = Eh, th = Th, tref = 12)
+  Another_plot = sharpeschoolhigh_1981(temp = temp_plot, r_tref = out[1], e = out[2], eh =out[3], th = out[4], tref = 12)
   lines(temp_plot, B_plot, col = 'black') 
+  # lines(temp_plot, Another_plot, col = 'black') 
   est_params = rbind(est_params, out)
 }
 names(est_params) = c("lnB0_Arr","Ea_Arr","Eh_Arr", "Th_Arr", "B0", "Ea", "Eh", "Th", "AIC")
@@ -303,7 +311,7 @@ for(s in 1:length(sp)){
                control = list(maxiter = 500))
   }
   bootresult <-  Boot(fit, method = 'case')
-  png(filename = paste("../results/TPC/", sp[s], "_TPC_boot.png", sep = ""), width = 960, height = 960)
+  # png(filename = paste("../results/TPC/", sp[s], "_TPC_a_boot.png", sep = ""), width = 960, height = 960)
   hist(bootresult, layout = c(2,2))
   graphics.off()
   
@@ -347,7 +355,7 @@ for(s in 1:length(sp)){
   #        title = 'Growth rate across temperatures')
   
   # plot bootstrapped predictions
-  png(filename = paste("../results/TPC/",sp[s], "_TPC_K.png", sep = ""), width = 960, height = 960)
+  # png(filename = paste("../results/TPC/",sp[s], "_TPC_a.png", sep = ""), width = 960, height = 960)
   ggplot() +
     geom_line(aes(temp, .fitted), d_preds, col = 'blue') +
     geom_line(aes(temp, pred, group = iter), boot1_preds, col = 'blue', alpha = 0.01) +
@@ -361,10 +369,10 @@ for(s in 1:length(sp)){
 }
 
 ###############################
-png(filename = "../results/TPC/TPC_fitted_K.png", width = 960, height = 960)
-plot(1, type="n", xlab="Temperature", ylab = "Growth rate", main = "TPC_fitted",
+# png(filename = "../results/TPC/TPC_fitted_K.png", width = 960, height = 960)
+plot(1, type="n", xlab="Temperature", ylab = "Carrying Capacity", main = "TPC_fitted",
      xlim = c(temp[1],temp[length(temp)]),
-     ylim =c(0,1.2), 
+     ylim =c(0,0.55), 
      cex.lab=2, cex.axis=2, cex.main=2.5)
 for(s in 1:length(sp)){
   mean_school = sharpeschoolhigh_1981(temp = temp_plot,  r_tref = est_params$B0[s], 
@@ -373,3 +381,4 @@ for(s in 1:length(sp)){
   lines(temp_plot, mean_school, col = color[s], lwd = 2)
 }
 graphics.off()
+
