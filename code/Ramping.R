@@ -480,31 +480,33 @@ sp_ra = c(sp[sort(rep(4:7,2))],sp[7])
 spinside = c("S18", "W02", "S18", "W03", "W02", "W03", "S18", "W02", "W03")
 colors_ra = c("darkgreen", "blue", "darkgreen", "chocolate2", "blue", "chocolate2", "darkgreen", "blue", "chocolate2")
 
-pdf("../results/Ramping_ra_OD_errbar.pdf")
+# pdf("../results/Ramping_ra_OD_errbar.pdf")
 for(i in temp){
   for(j in unique(sp_ra)){
     sp_ra_v = which(sp_ra == j)
     sub = ODra_rep[ODra_rep$temp == i,sp_ra_v]
     sub_sd = ODra_rep_sd[ODra_rep_sd$temp == i,sp_ra_v]
-    # png(filename = paste(("../results/Ramping_ra_OD_errbar/"),j,"_", i,sep=""), width = 480, height = 480)
+    png(filename = paste(("../results/Ramping_ra_OD_errbar/"),j,"_", i,".png",sep=""), width = 1400, height = 1400)
     plot(1, type="n", xlab="Day", ylab = "OD",
          main = paste(j,"_", i,sep=""),
          xlim = c(time[1],time[length(time)]),
-         ylim =c(min((sub-sub_sd), na.rm = T), max(sub, na.rm = T)+max(sub_sd,na.rm = T)))
-    lines(time,sub[,1], col = colors_ra[sp_ra_v][1], type="b", pch = 1)
+         ylim =c(min((sub-sub_sd), na.rm = T), max(sub, na.rm = T)+max(sub_sd,na.rm = T)),
+         cex.lab=3, cex.axis=3, cex.main=4)
+    lines(time,sub[,1], col = colors_ra[sp_ra_v][1], type="b", pch = 1, lwd=3)
     arrows(x0=time, y0=sub[,1]-sub_sd[,1], x1=time, y1=sub[,1]+sub_sd[,1],
-           code=3, angle=90, lwd=0.6, length = 0.05, colors_ra[sp_ra_v][1])
-    lines(time,sub[,2], col = colors_ra[sp_ra_v][2], type="b", pch = 1)
+           code=3, angle=90, lwd=3, length = 0.05, colors_ra[sp_ra_v][1])
+    lines(time,sub[,2], col = colors_ra[sp_ra_v][2], type="b", pch = 1, lwd=3)
     arrows(x0=time, y0=sub[,2]-sub_sd[,2], x1=time, y1=sub[,2]+sub_sd[,2], 
-           code=3, angle=90, lwd=0.6, length = 0.05, colors_ra[sp_ra_v][2])
+           code=3, angle=90, lwd=3, length = 0.05, colors_ra[sp_ra_v][2])
     if(length(sp_ra_v) == 3){
-      lines(time,sub[,3], col = colors_ra[sp_ra_v][3], type="b", pch = 1)
+      lines(time,sub[,3], col = colors_ra[sp_ra_v][3], type="b", pch = 1, lwd=3)
       arrows(x0=time, y0=sub[,3]-sub_sd[,3], x1=time, y1=sub[,3]+sub_sd[,3],
-             code=3, angle=90, lwd=0.6, length = 0.05, col = colors_ra[sp_ra_v][3])
+             code=3, angle=90, lwd=3, length = 0.05, col = colors_ra[sp_ra_v][3])
     }
+    op <- par(cex = 4)
     legend("topright", spinside[sp_ra_v], cex = 1, col = colors_ra[sp_ra_v], pch = 1, 
-           box.lty = 3, lwd = 1)
-    # graphics.off()
+           box.lty = 3, lwd = 3)
+    graphics.off()
   }
 }
-graphics.off()
+# graphics.off()
