@@ -435,3 +435,23 @@ text(0,0, paste("ρ =", round(rho_log, 4)), cex = 1)
 graphics.off()
 
 
+# ### before high temp deactivation
+# long_r = melt(all_r[all_r$temp< 23,1:3])
+# long_K = melt(all_K[all_K$temp< 23,1:3])
+# all_long = cbind(long_r[,2][!is.na(long_r[,2])], long_K[,2][!is.na(long_K[,2])])
+# 
+# png(filename = "../results/TPC/log_r_K_befdeac.png", width = 480, height = 480)
+# dataEllipse(log(all_long)[,1], log(all_long)[,2], levels= 0.95, grid = F, lty = 2,
+#             col = "black", lwd = 1, center.cex= 0.5, xlab = "log(r)", ylab = "log(K)",
+#             xlim = c(-2.3,0.5), ylim =c(-3.5,0.5), main = expression(paste("r vs. K (before 25",degree, "C)")),
+#             cex.lab=1, cex.axis=1, cex.main=1.5)
+# for(i in 1:4){
+#   points(log(unlist(all_r[((i-1)*6+1):(i*6),1:3])), log(unlist(all_K[((i-1)*6+1):(i*6),1:3])), 
+#          col = color[i], cex = 1, lwd = 1.5)
+# }
+# # op <- par(cex = 1)
+# legend("topright", legend = temp[1:4], cex = 1, col = color[1:4], pch = 1, lwd = 1.5)
+# cov_log = cov(log(all_long))
+# rho_log = cov_log[1,2] / (sqrt(cov_log[1,1]) * sqrt(cov_log[2,2]))
+# text(-0.5,0, paste("ρ =", round(rho_log, 4)), cex = 1)
+# graphics.off()
