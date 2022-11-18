@@ -388,42 +388,50 @@ long_r = melt(all_r[,1:3])
 long_K = melt(all_K[,1:3])
 long_r$temp = rep(all_r$temp, 3)
 long_K$temp = rep(all_K$temp, 3)
+all_long = cbind(long_r[,2][!is.na(long_r[,2])], long_K[,2][!is.na(long_K[,2])])
 # plotting r vs. K
 color = c("blue", "lightblue", "yellow", "darkorange", "brown", "black")
 temp = unique(all_r$temp)
 
-png(filename = "../results/TPC/r_K.png", width = 960, height = 960)
-plot(1, type="n", xlab="r", ylab = "K", main = "rK",
-     xlim = c(0,1.5),
-     ylim =c(0,0.7), 
-     cex.lab=2, cex.axis=2, cex.main=2.5)
-for(i in 1:length(temp)){
-  points(unlist(all_r[((i-1)*6+1):(i*6),]), unlist(all_K[((i-1)*6+1):(i*6),]), 
-         col = color[i], cex = 3, lwd = 3)
-}
-op <- par(cex = 2)
-legend("topright", legend = temp, cex = 1, col = color, pch = 3, lwd = 3)
-# plot(long_r[,2], long_K[,2], type = "p", xlab = "r", ylab = "K", main = "rK", 
-#      cex.lab=2, cex.axis=2, cex.main=2.5, cex = 3)
-text(1, 0.6, paste("cov =", round(cov(all_long)[2,1], 4)), cex = 1.5)
-graphics.off()
+# png(filename = "../results/TPC/r_K.png", width = 960, height = 960)
+# plot(1, type="n", xlab="r", ylab = "K", main = "rK",
+#      xlim = c(0,1.5),
+#      ylim =c(0,0.7), 
+#      cex.lab=2, cex.axis=2, cex.main=2.5)
+# for(i in 1:length(temp)){
+#   points(unlist(all_r[((i-1)*6+1):(i*6),]), unlist(all_K[((i-1)*6+1):(i*6),]), 
+#          col = color[i], cex = 3, lwd = 3)
+# }
+# op <- par(cex = 2)
+# legend("topright", legend = temp, cex = 1, col = color, pch = 3, lwd = 3)
+# # plot(long_r[,2], long_K[,2], type = "p", xlab = "r", ylab = "K", main = "rK", 
+# #      cex.lab=2, cex.axis=2, cex.main=2.5, cex = 3)
+# cov = cov(all_long)
+# rho = cov[1,2] / (sqrt(cov[1,1]) * sqrt(cov[2,2]))
+# text(1, 0.6, paste("ρ =", round(rho, 4)), cex = 1.5)
+# graphics.off()
 
-all_long = cbind(long_r[,2][!is.na(long_r[,2])], long_K[,2][!is.na(long_K[,2])])
-cov(all_long)
-
-png(filename = "../results/TPC/log_r_K.png", width = 960, height = 960)
-plot(1, type="n", xlab="log(r)", ylab = "log(K)", main ="log_rK",
-     xlim = c(-4.3,0.5),
-     ylim =c(-3.3,0), 
-     cex.lab=2, cex.axis=2, cex.main=2.5)
+png(filename = "../results/TPC/log_r_K.png", width = 480, height = 480)
+# plot(1, type="n", xlab="log(r)", ylab = "log(K)", main ="r vs. K",
+#      xlim = c(-4.3,0.5),
+#      ylim =c(-3.3,0),
+#      cex.lab=1, cex.axis=1, cex.main=1.5)
+dataEllipse(log(all_long)[,1], log(all_long)[,2], levels= 0.95, grid = F, lty = 2,
+            col = "black", lwd = 1, center.cex= 0.5, xlab = "log(r)", ylab = "log(K)",
+            xlim = c(-4.3,1), ylim =c(-3.5,0.5), main ="r vs. K",
+            cex.lab=1, cex.axis=1, cex.main=1.5)
 for(i in 1:length(temp)){
-  points(log(unlist(all_r[((i-1)*6+1):(i*6),])), log(unlist(all_K[((i-1)*6+1):(i*6),])), 
-         col = color[i], cex = 3, lwd = 3)
+  points(log(unlist(all_r[((i-1)*6+1):(i*6),1:3])), log(unlist(all_K[((i-1)*6+1):(i*6),1:3])), 
+         col = color[i], cex = 1, lwd = 1.5)
 }
-op <- par(cex = 2)
-legend("topleft", legend = temp, cex = 1, col = color, pch = 3, lwd = 3)
+op <- par(cex = 1)
+legend("topleft", legend = temp, cex = 1, col = color, pch = 1, lwd = 1.5)
 # plot(log(long_r[,2]), log(long_K[,2]), type = "p", xlab = "log(r)", ylab = "log(K)",
 #      main = "log_rK", cex.lab=2, cex.axis=2, cex.main=2.5, cex = 3)
 # plot(log(long_r[,2]), log(long_K[,2]), type = "p", xlab = "log(r)", ylab = "log(K)")
-text(-3, -0.5, paste("cov =", round(cov(log(all_long))[2,1], 4)), cex = 1.5)
+cov_log = cov(log(all_long))
+rho_log = cov_log[1,2] / (sqrt(cov_log[1,1]) * sqrt(cov_log[2,2]))
+text(0,0, paste("ρ =", round(rho_log, 4)), cex = 1)
 graphics.off()
+
+
