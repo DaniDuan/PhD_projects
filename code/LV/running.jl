@@ -2,9 +2,9 @@ using DifferentialEquations
 using Plots
 using RCall # for fun
 
-include("./Model.jl")
+include("./temp_params.jl")
 # test
-N = 5
+N = 2
 T = 15+273.15
 p = Params(N, T)
 C0 = fill(0.5, N)
