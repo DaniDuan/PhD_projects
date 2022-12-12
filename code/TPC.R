@@ -243,7 +243,7 @@ mod = 'sharpeschoolhigh_1981'
 k = 8.61*10^(-5)
 
 ###################!!!!! Using the same code for a ##############
-all_r = all_K
+all_r = all_a
 
 initials = data.frame()
 for(s in 1:length(sp)){
@@ -362,7 +362,7 @@ for(s in 1:length(sp)){
     geom_point(aes(temp, N), sub, size = 2, alpha = 0.5) +
     theme_bw(base_size = 12) +
     labs(x = 'Temperature (ºC)',
-         y = 'Growth rate',
+         y = 'Intraspecific Interaction',
          title = paste(sp[s],'Growth rate across temperatures'))+ 
     theme(text = element_text(size = 30))
   graphics.off()
@@ -453,4 +453,17 @@ legend("topright", legend = sp, cex = 1, col = color_sp, pch = 1)
 cov_log = cov(log(all_long))
 rho_log = cov_log[1,2] / (sqrt(cov_log[1,1]) * sqrt(cov_log[2,2]))
 text(-0.5,0, paste("ρ =", round(rho_log, 4)), cex = 1)
+graphics.off()
+
+################################## Single r/K curves ##################################
+pdf("../results/TPC/r_K_singles.pdf")
+for(s in 1:length(sp)){
+  for(t in temp){
+    plot(log(all_r[,s][all_r$temp == t]),log(all_K[,s][all_K$temp == t]), type = "p",
+         xlab="log(r)", ylab = "log(K)",
+         main = paste("r vs. K", "_",sp[s], "_", t,"C",sep = ""))
+    linear_rK = lm(log(all_K[,s][all_K$temp == t])~log(all_r[,s][all_r$temp == t]))
+    summary(linear_rK)$coefficients[2]
+  }
+}
 graphics.off()
