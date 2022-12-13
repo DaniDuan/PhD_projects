@@ -48,7 +48,7 @@ sd$temp = sort(rep(temp, 19))
 mean$time = rep(time, 6)
 sd$time = rep(time, 6)
 
-pdf("../results/TPC/TPC_gr_single.pdf")
+# pdf("../results/TPC/TPC_gr_single.pdf")
 for(i in temp){
   m_subset = subset(mean, temp == i)
   sd_subset = subset(sd, temp == i)
@@ -66,9 +66,9 @@ for(i in temp){
     # graphics.off()
   }
 }
-graphics.off()
+# graphics.off()
 
-pdf("../results/TPC/TPC_gr_single_allreps.pdf")
+# pdf("../results/TPC/TPC_gr_single_allreps.pdf")
 for(i in temp){
   for(rep in 1:6){
     subset = subset(TPC, temp == i & Rep == rep)
@@ -81,7 +81,7 @@ for(i in temp){
     }
   }
 }
-graphics.off()
+# graphics.off()
 ################################# fitting the growth model###################################
 logistic_model <- function(t, r_max, K, N_0){ # The classic logistic equation
   return(N_0 * K * exp(r_max * t)/(K + N_0 * (exp(r_max * t) - 1)))
@@ -94,7 +94,7 @@ gompertz_model = function(t, r_max, K, N_0, t_lag){ # Modified gompertz growth m
 t = seq(time[1],time[length(time)] , 0.1)
 TPC$S18[TPC$temp == 28 & (TPC$time > 30 & TPC$time < 50)] # removing irregular measurements
 
-pdf("../results/TPC/TPC_gr_fitting_single_allreps.pdf")
+# pdf("../results/TPC/TPC_gr_fitting_single_allreps.pdf")
 
 all_r = data.frame()
 all_K = data.frame()
@@ -172,7 +172,7 @@ for(i in temp){
   }
 }
 # S18, 12C
-graphics.off()
+# graphics.off()
 
 # x = all_r # backup
 # all_r = x
@@ -282,18 +282,20 @@ for(s in 1:3){
                        lower = low_lims,
                        upper = upper_lims,
                        supp_errors = 'Y')
-  plot(sub$temp, sub$N, main = sp[s],
-       ylim = c(min(sub$N, na.rm = T), (max(sub$N, na.rm = T)+0.2)))
+  plot(sub$temp, -sub$N, main = sp[s])#,
+       #ylim = c(min(sub$N, na.rm = T), (max(sub$N, na.rm = T)+0.2)))
   out = as.numeric(c(start_vals, summary(fit)$coefficients[1:4], AIC(fit)))
   B0 = out[5]; Ea = out[6]; Eh = out[7]; Th = out[8]
   B_plot = sharpeschoolhigh_1981(temp = temp_plot, r_tref = B0, e = Ea, eh = Eh, th = Th, tref = 12)
-  Another_plot = sharpeschoolhigh_1981(temp = temp_plot, r_tref = out[1], e = out[2], eh =out[3], th = out[4], tref = 12)
-  lines(temp_plot, B_plot, col = 'black') 
+  # Another_plot = sharpeschoolhigh_1981(temp = temp_plot, r_tref = out[1], e = out[2], eh =out[3], th = out[4], tref = 12)
+  lines(temp_plot, -B_plot, col = 'black') 
   # lines(temp_plot, Another_plot, col = 'black') 
   est_params = rbind(est_params, out)
 }
 names(est_params) = c("lnB0_Arr","Ea_Arr","Eh_Arr", "Th_Arr", "B0", "Ea", "Eh", "Th", "AIC")
 est_params$sp = sp
+mean(est_params$B0)
+mean(est_params$Ea)
 
 for(s in 1:length(sp)){
   B0 = est_params[s,5]; Ea = est_params[s,6]; Eh = est_params[s,7]; Th = est_params[s,8]

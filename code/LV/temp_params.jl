@@ -8,16 +8,16 @@ function temp_func(T, B0, Ea, Ed, Th)
 end
 
 function Params(N, T)
-    r0 = rand(Normal(0.1, 0.01), N) # test variation
-    Ea_r = rand(Normal(0.6, 0.1), N) # test variation
+    r0 = rand(Normal(0.21, 0.01), N) # from data
+    Ea_r = rand(Normal(0.95, 0.16), N) # from data
     Ed_r = fill(4, N)
-    Th_r = rand(Normal(25+273.15, 5), N) # test variation
+    Th_r = rand(Normal(25+273.15, 5), N) # from data
     r = temp_func(T, r0, Ea_r, Ed_r, Th_r) 
     # assuming every α has a seperated TPC
-    α0 =  rand(Normal(-0.3, 0.2), N,N) # test variation
-    Ea_α = rand(Normal(0.6, 0.1), N,N) # test variation
+    α0 =  rand(Normal(-1.18, 0.5), N,N) # mean value from data, test variation
+    Ea_α = rand(Normal(2.2, 0.5), N,N) # mean value from data, test variation
     Ed_α = fill(4, N, N)
-    Th_α = rand(Normal(25+273.15, 5), N, N) # test variation
+    Th_α = rand(Normal(24+273.15, 1), N, N) # test variation
     α = temp_func(T, α0, Ea_α, Ed_α, Th_α)
     return (N = N, α = α, r = r)
 end
