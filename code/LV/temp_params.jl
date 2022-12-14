@@ -15,7 +15,8 @@ function Params(N, T)
     r = temp_func(T, r0, Ea_r, Ed_r, Th_r) 
     # assuming every α has a seperated TPC
     α0 =  rand(Normal(-1.18, 0.5), N,N) # mean value from data, test variation
-    Ea_α = rand(Normal(2.2, 0.5), N,N) # mean value from data, test variation
+    ran_Eα = rand(Normal(2.2, 0.5), N)
+    Ea_α = [ran_Eα ran_Eα] # mean value from data, test variation
     Ed_α = fill(4, N, N)
     Th_α = rand(Normal(24+273.15, 1), N, N) # test variation
     α = temp_func(T, α0, Ea_α, Ed_α, Th_α)
