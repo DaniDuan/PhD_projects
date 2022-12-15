@@ -1,7 +1,5 @@
-using DifferentialEquations
-using Plots
+using DifferentialEquations, Plots, CairoMakie
 # using RCall # for fun
-using CairoMakie
 
 include("./Model.jl")
 # test
@@ -29,8 +27,8 @@ Plots.plot(sol, xaxis = "Time", yaxis = "Biomass", legend=false)
 ################## 
 N = 2
 C0 = fill(0.1, N)
-tspan = (1,1000)
-Temps = [0, 10, 25]
+tspan = (1,2000)
+Temps = [0, 12, 25]
 fig = Figure(resolution = (1200, 400))
 l = @layout [a b c]
 for i in 1:3
@@ -48,4 +46,4 @@ end
 plot(fig_dyn1, fig_dyn2, fig_dyn3, layout = l)
 # Plots.plot(sol, xaxis = "Time", yaxis = "Biomass", legend=false)    
 
-save("./test.png", fig)
+# save("./test.png", fig)
