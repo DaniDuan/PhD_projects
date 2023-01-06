@@ -243,7 +243,7 @@ mod = 'sharpeschoolhigh_1981'
 k = 8.61*10^(-5)
 
 ###################!!!!! Using the same code for a ##############
-all_r = all_a
+all_r = all_K
 
 initials = data.frame()
 for(s in 1:length(sp)){
@@ -296,6 +296,8 @@ names(est_params) = c("lnB0_Arr","Ea_Arr","Eh_Arr", "Th_Arr", "B0", "Ea", "Eh", 
 est_params$sp = sp
 mean(est_params$B0)
 mean(est_params$Ea)
+write.csv(est_params, "../results/TPC/est_params_K.csv", row.names=FALSE)
+
 
 for(s in 1:length(sp)){
   B0 = est_params[s,5]; Ea = est_params[s,6]; Eh = est_params[s,7]; Th = est_params[s,8]

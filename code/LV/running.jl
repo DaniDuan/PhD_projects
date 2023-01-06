@@ -4,7 +4,7 @@ using DifferentialEquations, Plots, CairoMakie
 include("./Model.jl")
 # test
 N = 2
-T = 0+273.15
+T = 15+273.15
 p = Params(N, T)
 C0 = fill(0.1, N)
 tspan = (1,1000)

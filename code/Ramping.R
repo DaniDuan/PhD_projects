@@ -408,22 +408,29 @@ for(i in 1:length(temp)){
 }
 graphics.off()
 
-################################### OD * RA (reps) ######################################################
+################################### OD * RA (reps) #####################################################
 Ramping_fat = data.frame(replicate(2, Ramping[,1],simplify = F), 
                      replicate(2, Ramping[,2],simplify = F),
                      replicate(2, Ramping[,3],simplify = F),
                      replicate(3, Ramping[,4],simplify = F),Ramping[,8:10])
 names(Ramping_fat) = names(ra_p)
-Ramping_fat$group = c(sort(rep(seq(1,6,1), (30*3))), rep(6,30), rep(7,60), sort(rep(8:9,(30*3))), sort(rep(10:11,(30*4))))
+Ramping_fat$group = c(sort(rep(seq(1,6,1), (30*3))), rep(6,30), rep(7,60),
+                      sort(rep(8:9,(30*3))), sort(rep(10:11,(30*4))))
 
 # group 1
 ra_rep = colMeans(ra_p[1:6,1:9], na.rm = T)
-ODra_rep = rbind(do.call("rbind", replicate(5, colMeans((ra_rep* Ramping_fat[Ramping_fat$Day == 0,1:9]), na.rm = T), simplify = FALSE)), 
-                 do.call("rbind", replicate(5, colMeans((ra_rep* Ramping_fat[Ramping_fat$Day == 1,1:9]), na.rm = T), simplify = FALSE)),
-                 do.call("rbind", replicate(5, colMeans((ra_rep* Ramping_fat[Ramping_fat$Day == 2,1:9]), na.rm = T), simplify = FALSE)))# the first part of the data frame
-ODra_rep_sd = rbind(do.call("rbind", replicate(5, apply((ra_rep* Ramping_fat[Ramping_fat$Day == 0,1:9]), 2, sd), simplify = FALSE)),
-                    do.call("rbind", replicate(5, apply((ra_rep* Ramping_fat[Ramping_fat$Day == 1,1:9]), 2, sd), simplify = FALSE)),
-                    do.call("rbind", replicate(5, apply((ra_rep* Ramping_fat[Ramping_fat$Day == 2,1:9]), 2, sd), simplify = FALSE)))# the first part of the data frame
+Day0 = do.call("rbind", replicate(5, colMeans((ra_rep* Ramping_fat[Ramping_fat$Day == 0,1:9]), na.rm = T), simplify = FALSE))
+Day0_sd = do.call("rbind", replicate(5, apply((ra_rep* Ramping_fat[Ramping_fat$Day == 0,1:9]), 2, sd), simplify = FALSE))
+Day1 = data.frame(); Day2 = data.frame(); Day1_sd = data.frame(); Day2_sd = data.frame()
+for(i in temp){
+  Day1 = rbind(Day1, colMeans((ra_rep* Ramping_fat[Ramping_fat$Day == 1 & Ramping_fat$temp == i,1:9]), na.rm = T))
+  Day2 = rbind(Day2, colMeans((ra_rep* Ramping_fat[Ramping_fat$Day == 2 & Ramping_fat$temp == i,1:9]), na.rm = T))
+  Day1_sd = rbind(Day1_sd, apply((ra_rep* Ramping_fat[Ramping_fat$Day == 1 & Ramping_fat$temp == i,1:9]), 2, sd))
+  Day2_sd = rbind(Day2_sd, apply((ra_rep* Ramping_fat[Ramping_fat$Day == 1 & Ramping_fat$temp == i,1:9]), 2, sd))
+}
+names(Day1) = names(Day2) = names(Day1_sd) = names(Day2_sd) = colnames(Day0)
+ODra_rep = rbind(Day0, Day1, Day2)# the first part of the data frame
+ODra_rep_sd = rbind(Day0_sd, Day1_sd, Day2_sd)
 
 # groups 2-10
 list = do.call("rbind", replicate(3,list(c(1,2),c(3,4),c(5,6))))
@@ -475,6 +482,8 @@ ODra_rep$day = sort(rep(time[0:35],5))
 ODra_rep_sd$day = sort(rep(time[0:35],5))
 ODra_rep$temp = rep(temp,35)
 ODra_rep_sd$temp = rep(temp,35)
+
+# write.csv(ODra_rep[1,1:10], "../results/TPC/initial_biomass.csv", row.names=FALSE)
 
 sp_ra = c(sp[sort(rep(4:7,2))],sp[7])
 spinside = c("S18", "W02", "S18", "W03", "W02", "W03", "S18", "W02", "W03")
