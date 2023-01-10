@@ -483,8 +483,6 @@ ODra_rep_sd$day = sort(rep(time[0:35],5))
 ODra_rep$temp = rep(temp,35)
 ODra_rep_sd$temp = rep(temp,35)
 
-# write.csv(ODra_rep[1,1:10], "../results/TPC/initial_biomass.csv", row.names=FALSE)
-
 sp_ra = c(sp[sort(rep(4:7,2))],sp[7])
 spinside = c("S18", "W02", "S18", "W03", "W02", "W03", "S18", "W02", "W03")
 colors_ra = c("darkgreen", "blue", "darkgreen", "chocolate2", "blue", "chocolate2", "darkgreen", "blue", "chocolate2")
@@ -519,3 +517,9 @@ for(i in temp){
   }
 }
 # graphics.off()
+
+### interaction data from day0 to day4 
+ref_biomass = ODra_rep[ODra_rep$temp == "10C",][1:5,]
+ref_biomass$day = c(0, 11.5, 24, 35.5, 45)
+colnames(ref_biomass) = c("S18","W02","S18.1","W03","W02.1","W03.1","S18.2","W02.2","W03.2","hour","temp")
+write.csv(ref_biomass, "../results/TPC/ref_biomass.csv", row.names=FALSE)
