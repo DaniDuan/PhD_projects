@@ -12,7 +12,7 @@ tspan = (1,1000)
 
 # solving test
 prob = ODEProblem(GLV_model!, C0, tspan, p)
-sol = solve(prob, Tsit5())
+sol = solve(prob, AutoTsit5(Rosenbrock23()))
 sol.u
 
 Plots.plot(sol, xaxis = "Time", yaxis = "Biomass", legend=false)
@@ -36,7 +36,7 @@ for i in 1:3
     Random.seed!(2)    
     p = Params(N, T)
     prob = ODEProblem(GLV_model!, C0, tspan, p);
-    sol = solve(prob, Tsit5());
+    sol = solve(prob, AutoTsit5(Rosenbrock23()));
     @eval $(Symbol("fig_dyn$i")) = $(Plots.plot(sol, xaxis = "Time", yaxis = "Biomass", legend=false))
     max_value = maximum(maximum(sol.u))
     odeSol(x, y) = Point2f(p.r[1]+p.α[1,1]*x+ p.α[1,2]*y, p.r[2]+p.α[2,2]*y+ p.α[2,1]*x) # Point2f(x',y')

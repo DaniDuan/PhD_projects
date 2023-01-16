@@ -11,7 +11,7 @@ r12 = data_r[:,:B0]
 Ea_r = data_r[:,:Ea]
 Ed_r = fill(4, 3)
 Th_r = data_r[1:3,:Th] .+ 273.15 # from data
-r0_all = temp_func((10+273.15), (12+273.15), r12, Ea_r, Ed_r, Th_r) 
+r0_all = temp_func((10+273.15), (12+273.15), r12, Ea_r)#, Ed_r, Th_r) 
 
 row_Eα = data_a[:,:Ea]
 Ed_α = fill(4, 3, 3)
@@ -36,7 +36,7 @@ for i in 1:3
     # ## Simulation
     p = (N = N, α = α_12, r = r_12)
     prob = ODEProblem(GLV_model!, C0, tspan, p)
-    sol = solve(prob, Tsit5())
+    sol = solve(prob, AutoTsit5(Rosenbrock23()))
     @eval $(Symbol("fig_temp$(10*i)")) = $(Plots.plot(sol, xaxis = "Time", yaxis = "Biomass", label=["W02" "W03"], legend=true, lc = [:blue :darkorange], title = string("Temp = ", i*10)))    
 end
 l = @layout [a b c]
