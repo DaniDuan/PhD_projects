@@ -41,7 +41,7 @@ Tr = 12+273.15
 l = @layout [a b c]
 fig = Figure(resolution = (1200, 400))
 # δT = -1/0.0000862 * (1/T - 1/(10+273.15))
-fst, snd, r0, α0, Ea_r, Ea_α = zeros(6)
+fst, snd, r0, α0, Ea_r, Ea_α, Ei, Ej = zeros(8)
 while fst<= 0 || snd<=0 
     # all B0s 
     r0 = rand(Normal(0.17, 0.005), N) # from data
@@ -65,26 +65,31 @@ while fst<= 0 || snd<=0
     fst = exp((Ei - Ej)*(-1/0.0000862 * (1/(T_ex1+273.15) - 1/(10+273.15)))) - r0[2]*α0[1,2]/(r0[1]*α0[2,2])
     snd = exp((Ej - Ei)*(-1/0.0000862 * (1/(T_ex2+273.15) - 1/(10+273.15)))) - r0[1]*α0[2,1]/(r0[2]*α0[1,1])
 end
-(T_ex1,T_ex2) = (25,0)
+
 for i in 1:3
     T = Temps[i]+273.15
+    δT = -1/0.0000862 * (1/T - 1/(10+273.15))
     # running the model
     r = temp_func(T, Tr, r0, Ea_r)
     α = temp_func(T, Tr, α0, Ea_α)
     p = (N = N, α = α, r = r)
     prob = ODEProblem(GLV_model!, C0, tspan, p)
     sol = solve(prob, AutoTsit5(Rosenbrock23()))
+    fst = exp((Ei - Ej)*δT) - r0[2]*α0[1,2]/(r0[1]*α0[2,2])
+    snd = exp((Ej - Ei)*δT) - r0[1]*α0[2,1]/(r0[2]*α0[1,1])
     print("richness:", count(x-> x > eps(), sol.u[length(sol)]), "\nbiomass: ", sol.u[length(sol)], "\n", fst > 0, " ", snd > 0, "\n", α, "\n")
-    @eval $(Symbol("fig_dyn$i")) = $(Plots.plot(sol, xaxis = "Time", yaxis = "Biomass", legend=false))
+    @eval $(Symbol("fig_dyn$i")) = $(Plots.plot(sol, xaxis = "Time", yaxis = "Biomass", label=["i" "j"], legend=true, title = string("Temp = ", Temps[i])))
     max_value = maximum(maximum(sol.u))
     odeSol(x, y) = Point2f(p.r[1]+p.α[1,1]*x+ p.α[1,2]*y, p.r[2]+p.α[2,2]*y+ p.α[2,1]*x) # Point2f(x',y')
     ax = CairoMakie.Axis(fig[1, i], xlabel = "C1", ylabel = "C2", backgroundcolor = :white)
     streamplot!(ax, odeSol, 0 .. max_value*1.5, 0 .. max_value*1.5, colormap = Reverse(:Blues), gridsize = (32, 32), arrow_size = 10)
 end
-display(Plots.plot(fig_dyn1, fig_dyn2, fig_dyn3, layout = l, size = (950, 300)))
-display(fig)
+# CairoMakie.save("../../results/Simulations/coexistence_phase.png", fig)
+Plots.plot(fig_dyn1, fig_dyn2, fig_dyn3, layout = l, size = (1200, 400), left_margin = 5Plots.mm, bottom_margin = 5Plots.mm)
+# savefig("../../results/Simulations/coexistence_biomass.png")
+# display(fig)
 
 print("richness:", count(x-> x > 1e-5, sol.u[length(sol)]), 
 "\nbiomass: ", sol.u[length(sol)], "\n", fst > 0, " ", snd > 0, "\n", α)
 
-Plots.plot(sol)
+# Plots.plot(sol)

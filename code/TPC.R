@@ -296,7 +296,7 @@ names(est_params) = c("lnB0_Arr","Ea_Arr","Eh_Arr", "Th_Arr", "B0", "Ea", "Eh", 
 est_params$sp = sp
 mean(est_params$B0)
 mean(est_params$Ea)
-write.csv(est_params, "../results/TPC/est_params_K.csv", row.names=FALSE)
+# write.csv(est_params, "../results/TPC/est_params_K.csv", row.names=FALSE)
 
 
 for(s in 1:length(sp)){
@@ -316,8 +316,8 @@ for(s in 1:length(sp)){
   }
   bootresult <-  Boot(fit, method = 'case')
   # png(filename = paste("../results/TPC/", sp[s], "_TPC_a_boot.png", sep = ""), width = 960, height = 960)
-  hist(bootresult, layout = c(2,2))
-  graphics.off()
+  # hist(bootresult, layout = c(2,2))
+  # graphics.off()
   
   sub <- data.frame(N = all_r[,s], temp = all_r$temp)
   d_fit <- nest(sub, data = c(temp, N)) %>%
@@ -359,24 +359,24 @@ for(s in 1:length(sp)){
   #        title = 'Growth rate across temperatures')
   
   # plot bootstrapped predictions
-  # png(filename = paste("../results/TPC/",sp[s], "_TPC_a.png", sep = ""), width = 960, height = 960)
+  png(filename = paste("../results/TPC/",sp[s], "_TPC_K.png", sep = ""), width = 960, height = 960)
   ggplot() +
     geom_line(aes(temp, .fitted), d_preds, col = 'blue') +
     geom_line(aes(temp, pred, group = iter), boot1_preds, col = 'blue', alpha = 0.01) +
     geom_point(aes(temp, N), sub, size = 2, alpha = 0.5) +
     theme_bw(base_size = 12) +
     labs(x = 'Temperature (ºC)',
-         y = 'Intraspecific Interaction',
-         title = paste(sp[s],'Growth rate across temperatures'))+ 
+         y = 'Carrying Capacity',
+         title = paste(sp[s],'Carrying Capacity across temperatures'))+ 
     theme(text = element_text(size = 30))
   graphics.off()
 }
 
 ###############################
-# png(filename = "../results/TPC/TPC_fitted_K.png", width = 960, height = 960)
-plot(1, type="n", xlab="Temperature", ylab = "Carrying Capacity", main = "TPC_fitted",
+png(filename = "../results/TPC/TPC_fitted_a.png", width = 960, height = 960)
+plot(1, type="n", xlab="Temperature", ylab = "Intrapecific Interaction", main = "TPC_fitted",
      xlim = c(temp[1],temp[length(temp)]),
-     ylim =c(0,0.55), 
+     ylim =c(0,15), 
      cex.lab=2, cex.axis=2, cex.main=2.5)
 for(s in 1:length(sp)){
   mean_school = sharpeschoolhigh_1981(temp = temp_plot,  r_tref = est_params$B0[s], 

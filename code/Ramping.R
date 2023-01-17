@@ -520,6 +520,9 @@ for(i in temp){
 
 ### interaction data from day0 to day4 
 ref_biomass = ODra_rep[ODra_rep$temp == "10C",][1:5,]
-ref_biomass$day = c(0, 11.5, 24, 35.5, 45)
-colnames(ref_biomass) = c("S18","W02","S18.1","W03","W02.1","W03.1","S18.2","W02.2","W03.2","hour","temp")
+ref_biomass_sd = ODra_rep_sd[ODra_rep_sd$temp == "10C",][1:5,]
+ref_biomass_sd[is.na(ref_biomass_sd)] = 0
+ref_biomass$day = ref_biomass_sd$day = c(0, 11.5, 24, 35.5, 45)
+colnames(ref_biomass) = colnames(ref_biomass_sd) = c("S18","W02","S18.1","W03","W02.1","W03.1","S18.2","W02.2","W03.2","hour","temp")
 write.csv(ref_biomass, "../results/TPC/ref_biomass.csv", row.names=FALSE)
+write.csv(ref_biomass_sd, "../results/TPC/ref_biomass_sd.csv", row.names=FALSE)
