@@ -16,7 +16,6 @@ TPC = TPC[!is.na(TPC$X.13),] # removing rows without data
 TPC = TPC[,-1] # removing numbering col
 TPC = TPC[,-ncol(TPC)] # removing wavelength col
 
-### for timing each relative abundance with OD
 TPC = TPC[4:9]
 TPC = TPC[-seq(1, nrow(TPC), 8),]
 TPC = TPC[-seq(7, nrow(TPC), 7),]

@@ -93,3 +93,80 @@ print("richness:", count(x-> x > 1e-5, sol.u[length(sol)]),
 "\nbiomass: ", sol.u[length(sol)], "\n", fst > 0, " ", snd > 0, "\n", α)
 
 # Plots.plot(sol)
+
+######################### !!! Coexistence Condition #####################################
+
+using LinearAlgebra, Random, Distributions, DifferentialEquations, Plots, CairoMakie
+include("./Model.jl")
+
+N = 2
+C0 = fill(0.01, N)
+tspan = (0,2000)
+
+# all initial values
+Tr = 0+273.15
+
+Random.seed!(0)
+r0 = rand(Normal(0.17, 0.005), N) # from data
+α0 =  rand(Normal(-0.28, 1.91), N,N) # from data
+α0_diag = rand(truncated(Normal(-0.85, 0.78); upper = 0), N)
+α0[diagind(α0)] = α0_diag
+
+# coexistence condition
+con1 = r0[2]*α0[1,2] / (r0[1]*α0[2,2])
+con2 = r0[2]*α0[1,1] / (r0[1]*α0[2,1])
+# dominance condition
+con_d = r0[2]*(α0[1,2]+α0[1,1]) / (r0[1]*(α0[2,1]+α0[2,2]))
+
+con1, con2, con_d = log(con1), log(con2), log(con_d)
+# T = rand(Uniform(273.15, 25+273.15))
+T = 10 + 273.15
+ΔT = -1/0.0000862 * (1/T - 1/Tr)
+
+#Base plot
+Eα_seq = range(-5, 5, length=100)
+Er1 = con1/ΔT .+ Eα_seq
+Er2 = con2/ΔT .+ Eα_seq
+Erd = con_d/ΔT .+ Eα_seq
+
+colors = ["darkorange" "blue" "black"]
+colors_1 = ["darkorange" "blue" "grey"]
+plot_s = Plots.plot(Eα_seq, [Er1 Er2 Erd], color = colors, label = ["Survival Condition for i" "Survival Condition for j" "Condition for Dominance"])
+Plots.ylims!(-1,1.5)
+Plots.xlims!(-5,5)
+
+all_ΔEr = zeros(0)
+all_ΔEα = zeros(0)
+all_c =  Vector{String}()
+for i in 1:200
+    Ea_r = rand(Normal(0.95, 0.17), N) # from data
+    r = temp_func(T, Tr, r0, Ea_r)#, Ed_r, Th_r) 
+    ran_Eα = rand(truncated(Normal(2.19, 3.74); lower = 0, upper = 5), N) # from data
+    Ea_α = reshape(repeat(ran_Eα, N),(N,N)) # mean value from data, test variation
+    α = temp_func(T, Tr, α0, Ea_α)#, Ed_α, Th_α)
+
+    p = (N = N, α = α, r = r)
+
+    prob = ODEProblem(GLV_model!, C0, tspan, p)
+    sol = solve(prob, AutoTsit5(Rosenbrock23()))
+    # sol.u
+
+    ############# Analysis ##################
+    ΔEr = Ea_r[1] - Ea_r[2]
+    ΔEα = ran_Eα[1] - ran_Eα[2]
+    # ΔE = ΔEr - ΔEα
+    div = count(x-> x > 1e-5, sol.u[length(sol)])
+    dom = [if div == 1 3 elseif div == 2 && sol.u[length(sol)][1] > sol.u[length(sol)][2] 1 else 2 end]
+    append!(all_ΔEr , ΔEr)
+    append!(all_ΔEα, ΔEα)
+    append!(all_c, colors_1[dom])
+end
+# Plots.scatter!([all_ΔEα],[all_ΔEr], color = all_c, label = ["i dominates" "j dominates" "cannot coexist"])
+Plots.scatter!(all_ΔEα[findall(x->x==colors_1[1], all_c)],all_ΔEr[findall(x->x==colors_1[1], all_c)], color = colors_1[1], label = "i dominates")
+Plots.scatter!(all_ΔEα[findall(x->x==colors_1[2], all_c)],all_ΔEr[findall(x->x==colors_1[2], all_c)], color = colors_1[2], label = "j dominates")
+Plots.scatter!(all_ΔEα[findall(x->x==colors_1[3], all_c)],all_ΔEr[findall(x->x==colors_1[3], all_c)], color = colors_1[3], label = "cannot coexist")
+
+Plots.plot(plot_s, xaxis = "ΔEα", yaxis = "ΔEr", legend = :topright)
+savefig("../../results/Simulations/coex_con.png")
+
+# Plots.plot(sol, xaxis = "Time", yaxis = "Biomass", legend=false)
