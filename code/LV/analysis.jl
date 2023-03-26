@@ -95,10 +95,6 @@ print("richness:", count(x-> x > 1e-5, sol.u[length(sol)]),
 # Plots.plot(sol)
 
 ######################### !!! Coexistence Condition #####################################
-
-using LinearAlgebra, Random, Distributions, DifferentialEquations, Plots, CairoMakie
-include("./Model.jl")
-
 N = 2
 C0 = fill(0.01, N)
 tspan = (0,2000)
@@ -120,25 +116,33 @@ con_d = r0[2]*(α0[1,2]+α0[1,1]) / (r0[1]*(α0[2,1]+α0[2,2]))
 
 con1, con2, con_d = log(con1), log(con2), log(con_d)
 # T = rand(Uniform(273.15, 25+273.15))
-T = 10 + 273.15
+T = 25 + 273.15
 ΔT = -1/0.0000862 * (1/T - 1/Tr)
 
 #Base plot
-Eα_seq = range(-5, 5, length=100)
-Er1 = con1/ΔT .+ Eα_seq
-Er2 = con2/ΔT .+ Eα_seq
-Erd = con_d/ΔT .+ Eα_seq
+# Eα_seq = range(-5, 5, length=100)
+# Er1 = con1/ΔT .+ Eα_seq
+# Er2 = con2/ΔT .+ Eα_seq
+# Erd = con_d/ΔT .+ Eα_seq
 
+E1_seq = range(-5, 1, length=100)
+Er1 = con1/ΔT .+ E1_seq
+Er2 = con2/ΔT .+ E1_seq
+Erd = con_d/ΔT .+ E1_seq
 colors = ["darkorange" "blue" "black"]
 colors_1 = ["darkorange" "blue" "grey"]
-plot_s = Plots.plot(Eα_seq, [Er1 Er2 Erd], color = colors, label = ["Survival Condition for i" "Survival Condition for j" "Condition for Dominance"])
-Plots.ylims!(-1,1.5)
-Plots.xlims!(-5,5)
+# plot_s = Plots.plot(Eα_seq, [Er1 Er2 Erd], color = colors, label = ["Survival Condition for i" "Survival Condition for j" "Condition for Dominance"])
+# Plots.ylims!(-0.7,0.8)
+# Plots.xlims!(-5,5)
 
-all_ΔEr = zeros(0)
-all_ΔEα = zeros(0)
-all_c =  Vector{String}()
+plot_s = Plots.plot(E1_seq, [Er1 Er2 Erd], color = colors, label = ["Survival Condition for i" "Survival Condition for j" "Condition for Dominance"])
+Plots.ylims!(-4.5,1.2)
+Plots.xlims!(-4.5,1.2)
+
+# all_ΔEr,all_ΔEα,all_c = zeros(0),zeros(0), Vector{String}()
+all_ΔE1,all_ΔE2,all_c = zeros(0),zeros(0), Vector{String}()
 for i in 1:200
+    Random.seed!(i)
     Ea_r = rand(Normal(0.95, 0.17), N) # from data
     r = temp_func(T, Tr, r0, Ea_r)#, Ed_r, Th_r) 
     ran_Eα = rand(truncated(Normal(2.19, 3.74); lower = 0, upper = 5), N) # from data
@@ -150,23 +154,27 @@ for i in 1:200
     prob = ODEProblem(GLV_model!, C0, tspan, p)
     sol = solve(prob, AutoTsit5(Rosenbrock23()))
     # sol.u
-
-    ############# Analysis ##################
-    ΔEr = Ea_r[1] - Ea_r[2]
-    ΔEα = ran_Eα[1] - ran_Eα[2]
-    # ΔE = ΔEr - ΔEα
-    div = count(x-> x > 1e-5, sol.u[length(sol)])
-    dom = [if div == 1 3 elseif div == 2 && sol.u[length(sol)][1] > sol.u[length(sol)][2] 1 else 2 end]
-    append!(all_ΔEr , ΔEr)
-    append!(all_ΔEα, ΔEα)
-    append!(all_c, colors_1[dom])
+    if sol.retcode == :Success
+        ############# Analysis ##################
+        # ΔEr = Ea_r[1] - Ea_r[2]
+        # ΔEα = ran_Eα[1] - ran_Eα[2]
+        ΔE1,ΔE2 = Ea_r .- ran_Eα
+        div = count(x-> x > eps(), sol.u[length(sol)]) # Need a stricter biomass boundary for 10 degree
+        dom = [if div == 1 3 elseif div == 2 && sol.u[length(sol)][1] > sol.u[length(sol)][2] 1 else 2 end]
+        # append!(all_ΔEr , ΔEr)
+        # append!(all_ΔEα, ΔEα)
+        append!(all_ΔE1 , ΔE1)
+        append!(all_ΔE2, ΔE2)
+        append!(all_c, colors_1[dom])
+    end 
 end
-# Plots.scatter!([all_ΔEα],[all_ΔEr], color = all_c, label = ["i dominates" "j dominates" "cannot coexist"])
-Plots.scatter!(all_ΔEα[findall(x->x==colors_1[1], all_c)],all_ΔEr[findall(x->x==colors_1[1], all_c)], color = colors_1[1], label = "i dominates")
-Plots.scatter!(all_ΔEα[findall(x->x==colors_1[2], all_c)],all_ΔEr[findall(x->x==colors_1[2], all_c)], color = colors_1[2], label = "j dominates")
-Plots.scatter!(all_ΔEα[findall(x->x==colors_1[3], all_c)],all_ΔEr[findall(x->x==colors_1[3], all_c)], color = colors_1[3], label = "cannot coexist")
-
-Plots.plot(plot_s, xaxis = "ΔEα", yaxis = "ΔEr", legend = :topright)
-savefig("../../results/Simulations/coex_con.png")
-
+labels = ["i dominates" "j dominates" "cannot coexist"]
+for i in 1:3
+    # Plots.scatter!(all_ΔEα[findall(x->x==colors_1[i], all_c)],all_ΔEr[findall(x->x==colors_1[i], all_c)], color = colors_1[i], label = labels[i])
+    Plots.scatter!(all_ΔE2[findall(x->x==colors_1[i], all_c)],all_ΔE1[findall(x->x==colors_1[i], all_c)], color = colors_1[i], label = labels[i])
+end
+# Plots.plot(plot_s, xaxis = "ΔEα", yaxis = "ΔEr", legend = :bottomright, title = "Temperature = $(floor(Int, T-273.15)) °C")
+Plots.plot(plot_s, xaxis = "Ei", yaxis = "Ej", legend = :bottomright, title = "Temperature = $(floor(Int, T-273.15)) °C")
+savefig("../../results/Simulations/coex_con_ij_25.png")
+# savefig("../../results/Simulations/coex_con_ar_25.png")
 # Plots.plot(sol, xaxis = "Time", yaxis = "Biomass", legend=false)
