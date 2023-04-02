@@ -242,7 +242,7 @@ mod = 'sharpeschoolhigh_1981'
 k = 8.61*10^(-5)
 
 ###################!!!!! Using the same code for a ##############
-all_r = all_K
+all_r = all_a
 
 initials = data.frame()
 for(s in 1:length(sp)){
@@ -358,7 +358,7 @@ for(s in 1:length(sp)){
   #        title = 'Growth rate across temperatures')
   
   # plot bootstrapped predictions
-  png(filename = paste("../results/TPC/",sp[s], "_TPC_K.png", sep = ""), width = 960, height = 960)
+  # png(filename = paste("../results/TPC/",sp[s], "_TPC_K.png", sep = ""), width = 960, height = 960)
   ggplot() +
     geom_line(aes(temp, .fitted), d_preds, col = 'blue') +
     geom_line(aes(temp, pred, group = iter), boot1_preds, col = 'blue', alpha = 0.01) +
@@ -373,7 +373,8 @@ for(s in 1:length(sp)){
 
 ###############################
 png(filename = "../results/TPC/TPC_fitted_a.png", width = 960, height = 960)
-plot(1, type="n", xlab="Temperature", ylab = "Intrapecific Interaction", main = "TPC_fitted",
+par(mar = c(5,6,1,1))
+plot(1, type="n", xlab="Temperature", ylab = "Intraspecific Interaction",
      xlim = c(temp[1],temp[length(temp)]),
      ylim =c(0,15), 
      cex.lab=2, cex.axis=2, cex.main=2.5)
@@ -383,6 +384,7 @@ for(s in 1:length(sp)){
                                       th = est_params$Th[s], tref = 12)
   lines(temp_plot, mean_school, col = color[s], lwd = 2)
 }
+legend(x = "topright", legend = c("S18", "W02", "W03"), col = color, lwd = 2, cex = 2)
 graphics.off()
 
 ################################## r vs. K ########################################

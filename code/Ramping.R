@@ -526,3 +526,73 @@ ref_biomass$day = ref_biomass_sd$day = c(0, 11.5, 24, 35.5, 45)
 colnames(ref_biomass) = colnames(ref_biomass_sd) = c("S18","W02","S18.1","W03","W02.1","W03.1","S18.2","W02.2","W03.2","hour","temp")
 write.csv(ref_biomass, "../results/TPC/ref_biomass.csv", row.names=FALSE)
 write.csv(ref_biomass_sd, "../results/TPC/ref_biomass_sd.csv", row.names=FALSE)
+
+
+######################### Ending community ####################
+ra_end = subset(ra_p, Day == 24)
+View(ra_end)
+ra_end[ra_end$temp == "R",] = subset(ra_p[ra_p$Day == 20,], temp == "R")
+ra_end = head(ra_end,-4)
+
+ra_mean_end = data.frame()
+ra_ci_end = data.frame()
+for(i in unique(ra_end$temp)){
+  subset = ra_end[ra_end$temp == i,1:9]
+  ra_mean_end = rbind(ra_mean_end, colMeans(subset, na.rm = T))
+  ra_ci_end = rbind(ra_ci_end, 1.96* apply(!is.na(subset), 2, sd)/nrow(!is.na(subset))**0.5)
+}
+colnames(ra_mean_end) = colnames(ra_ci_end) = colnames(ra_end[,1:9])
+rownames(ra_mean_end) = rownames(ra_ci_end) = unique(ra_end$temp)
+
+colors_ra_sub = c(rgb(0, 0.39, 0, 0.5), rgb(0,0,1, 0.5), rgb(0.82,0.41,0.12,0.5))
+names_bar = c("S18+W02","S18+W03","W02+W03","All")
+
+for(i in 1:5){
+  ra_mean_temp = ra_mean_end[i,]
+  temp_sub = t(c(ra_mean_temp[1:2],0,ra_mean_temp[3],0,ra_mean_temp[4],0,ra_mean_temp[5:9]))
+  temp_sub_all = c()
+  for(j in 1:4){
+    temp_sub_all = cbind(temp_sub_all,t(temp_sub)[(3*j-2):(3*j)])
+  }
+  png(filename = paste(("../results/Ramp_end/"),temp[i],".png",sep=""), width = 960, height = 960)
+  par(mar = c(7,7,5,10))
+  barplot(temp_sub_all, col = unique(colors_ra_sub), names = names_bar, main = paste("Treatment =",temp[i]),
+          xlab = "Group", ylab = "Percentage",width=c(0.1,0.1,0.1,0.1),
+          border=unique(colors_ra), legend = c("S18","W02","W03"),
+          args.legend = list(x = "topright",inset = c(- 0.2, 0),cex = 2), 
+          cex.lab=2, cex.axis=2, cex.names = 2, cex.main=2.5)
+  graphics.off()
+}
+
+colors_ra_sp = colors_ra_sub[c(1,2,1,3,2,3,1,2,3)]
+sp_group = sp[4:7]
+for(i in 1:4){
+  if(i != 4){
+    sp_sub = t(ra_mean_end[,(i*2-1):(i*2)])
+    sp_sub = sp_sub[,c(1,3,4,5,2)]
+    sp_sub[is.na(sp_sub)] = 0
+    colnames(sp_sub) = temp
+    png(filename = paste(("../results/Ramp_end/"),sp_group[i],".png",sep=""), width = 960, height = 720)
+    par(mar = c(7,7,5,10))
+    barplot(sp_sub, col = colors_ra_sp[(i*2-1):(i*2)], names = temp[c(1,3,4,5,2)], main = paste("Group:",sp_group[i]),
+            xlab = "Temperature Treatment", ylab = "Percentage",width=c(0.1,0.1,0.1,0.1),
+            border=colors_ra_sp[(i*2-1):(i*2)], legend = spinside[(i*2-1):(i*2)],
+            args.legend = list(x = "topright",inset = c(- 0.2, 0),cex = 2), 
+            cex.lab=2, cex.axis=2, cex.names = 2, cex.main=2.5)
+    graphics.off()
+  }else{
+    sp_sub = t(ra_mean_end[,7:9])
+    sp_sub = sp_sub[,c(1,3,4,5,2)]
+    sp_sub[is.na(sp_sub)] = 0
+    colnames(sp_sub) = temp
+    png(filename = paste(("../results/Ramp_end/"),sp_group[i],".png",sep=""), width = 960, height = 720)
+    par(mar = c(7,7,5,10))
+    barplot(sp_sub, col = colors_ra_sp[7:9], names = temp[c(1,3,4,5,2)], main = paste("Group:",sp_group[i]),
+            xlab = "Temperature Treatment", ylab = "Percentage",width=c(0.1,0.1,0.1,0.1),
+            border=colors_ra_sp[7:9], legend = spinside[7:9],
+            args.legend = list(x = "topright",inset = c(- 0.2, 0),cex = 2), 
+            cex.lab=2, cex.axis=2, cex.names = 2, cex.main=2.5)
+    graphics.off()
+    
+  }
+}

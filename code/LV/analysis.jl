@@ -107,7 +107,7 @@ r0 = rand(Normal(0.17, 0.005), N) # from data
 α0 =  rand(Normal(-0.28, 1.91), N,N) # from data
 α0_diag = rand(truncated(Normal(-0.85, 0.78); upper = 0), N)
 α0[diagind(α0)] = α0_diag
-
+α0
 # coexistence condition
 con1 = r0[2]*α0[1,2] / (r0[1]*α0[2,2])
 con2 = r0[2]*α0[1,1] / (r0[1]*α0[2,1])
@@ -116,7 +116,7 @@ con_d = r0[2]*(α0[1,2]+α0[1,1]) / (r0[1]*(α0[2,1]+α0[2,2]))
 
 con1, con2, con_d = log(con1), log(con2), log(con_d)
 # T = rand(Uniform(273.15, 25+273.15))
-T = 25 + 273.15
+T = 10 + 273.15
 ΔT = -1/0.0000862 * (1/T - 1/Tr)
 
 #Base plot
@@ -159,7 +159,7 @@ for i in 1:200
         # ΔEr = Ea_r[1] - Ea_r[2]
         # ΔEα = ran_Eα[1] - ran_Eα[2]
         ΔE1,ΔE2 = Ea_r .- ran_Eα
-        div = count(x-> x > eps(), sol.u[length(sol)]) # Need a stricter biomass boundary for 10 degree
+        div = count(x-> x > eps(), sol.u[length(sol)]) # Need a stricter biomass boundary for 10 degree, use 10^(-7)
         dom = [if div == 1 3 elseif div == 2 && sol.u[length(sol)][1] > sol.u[length(sol)][2] 1 else 2 end]
         # append!(all_ΔEr , ΔEr)
         # append!(all_ΔEα, ΔEα)
@@ -174,7 +174,7 @@ for i in 1:3
     Plots.scatter!(all_ΔE2[findall(x->x==colors_1[i], all_c)],all_ΔE1[findall(x->x==colors_1[i], all_c)], color = colors_1[i], label = labels[i])
 end
 # Plots.plot(plot_s, xaxis = "ΔEα", yaxis = "ΔEr", legend = :bottomright, title = "Temperature = $(floor(Int, T-273.15)) °C")
-Plots.plot(plot_s, xaxis = "Ei", yaxis = "Ej", legend = :bottomright, title = "Temperature = $(floor(Int, T-273.15)) °C")
-savefig("../../results/Simulations/coex_con_ij_25.png")
+Plots.plot(plot_s, xaxis = "Ei", yaxis = "Ej", legend = :bottomright, title = "Temperature = $(floor(Int, T-273.15)) °C", size = (600,600))
+# savefig("../../results/Simulations/coex_con_ij_10.png")
 # savefig("../../results/Simulations/coex_con_ar_25.png")
 # Plots.plot(sol, xaxis = "Time", yaxis = "Biomass", legend=false)
