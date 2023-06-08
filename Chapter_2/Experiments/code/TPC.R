@@ -368,23 +368,23 @@ for(s in 1:length(sp)){
          y = 'Carrying Capacity',
          title = paste(sp[s],'Carrying Capacity across temperatures'))+ 
     theme(text = element_text(size = 30))
-  graphics.off()
+  # graphics.off()
 }
 
 ###############################
 png(filename = "../results/TPC/TPC_fitted_a.png", width = 960, height = 960)
 par(mar = c(5,6,1,1))
-plot(1, type="n", xlab="Temperature", ylab = "Intraspecific Interaction",
+plot(1, type="n", xlab="Temperature", ylab = "Self-Regulation",
      xlim = c(temp[1],temp[length(temp)]),
      ylim =c(0,15), 
-     cex.lab=2, cex.axis=2, cex.main=2.5)
+     cex.lab=3.5, cex.axis=2.5, cex.main=3.5)
 for(s in 1:length(sp)){
   mean_school = sharpeschoolhigh_1981(temp = temp_plot,  r_tref = est_params$B0[s], 
                                       e = est_params$Ea[s], eh = est_params$Eh[s],
                                       th = est_params$Th[s], tref = 12)
-  lines(temp_plot, mean_school, col = color[s], lwd = 2)
+  lines(temp_plot, mean_school, col = color[s], lwd = 3)
 }
-legend(x = "topright", legend = c("S18", "W02", "W03"), col = color, lwd = 2, cex = 2)
+legend(x = "topleft", legend = c("S18", "W02", "W03"), col = color, lwd = 3, cex = 3.5)
 graphics.off()
 
 ################################## r vs. K ########################################
